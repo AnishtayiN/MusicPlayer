@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/track.dart';
+import '../theme/app_theme.dart';
 
 class MiniPlayer extends StatelessWidget {
   final Track? currentTrack;
@@ -29,11 +31,9 @@ class MiniPlayer extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: const BoxDecoration(
-            color: Color(0xFF111827),
-            border: Border(
-              top: BorderSide(color: Colors.white12),
-            ),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            border: Border(top: BorderSide(color: AppTheme.cardBorder)),
           ),
           child: SafeArea(
             top: false,
@@ -50,21 +50,17 @@ class MiniPlayer extends StatelessWidget {
                           errorBuilder: (_, __, ___) => Container(
                             width: 48,
                             height: 48,
-                            color: const Color(0xFF1E1B4B),
-                            child: const Icon(
-                              Icons.music_note,
-                              color: Colors.white54,
-                            ),
+                            color: AppTheme.placeholder,
+                            child: Icon(Icons.music_note,
+                                color: AppTheme.textMuted),
                           ),
                         )
                       : Container(
                           width: 48,
                           height: 48,
-                          color: const Color(0xFF1E1B4B),
-                          child: const Icon(
-                            Icons.music_note,
-                            color: Colors.white54,
-                          ),
+                          color: AppTheme.placeholder,
+                          child: Icon(Icons.music_note,
+                              color: AppTheme.textMuted),
                         ),
                 ),
                 const SizedBox(width: 12),
@@ -77,8 +73,8 @@ class MiniPlayer extends StatelessWidget {
                         currentTrack!.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppTheme.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -86,8 +82,8 @@ class MiniPlayer extends StatelessWidget {
                         currentTrack!.artist,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white54,
+                        style: TextStyle(
+                          color: AppTheme.textMuted,
                           fontSize: 12,
                         ),
                       ),
@@ -98,22 +94,16 @@ class MiniPlayer extends StatelessWidget {
                   onPressed: onPlayPause,
                   icon: Icon(
                     isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
+                    color: AppTheme.iconActive,
                   ),
                 ),
                 IconButton(
                   onPressed: onNext,
-                  icon: const Icon(
-                    Icons.skip_next,
-                    color: Colors.white,
-                  ),
+                  icon: Icon(Icons.skip_next, color: AppTheme.iconActive),
                 ),
                 IconButton(
                   onPressed: onClose,
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white54,
-                  ),
+                  icon: Icon(Icons.close, color: AppTheme.textMuted),
                   tooltip: 'بستن و قطع پخش',
                 ),
               ],
