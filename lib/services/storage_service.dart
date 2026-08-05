@@ -11,13 +11,7 @@ class StorageService {
     if (_initialized) return;
     
     try {
-      // Ensure Hive is initialized (in case main.dart didn't do it properly)
-      if (!Hive.isInitialized) {
-        await Hive.initFlutter();
-        print('✅ Hive initialized in StorageService');
-      }
-      
-      // Register Adapter safely
+      // Register Adapter safely (no need to check isInitialized in newer Hive versions)
       if (!Hive.isAdapterRegistered(0)) {
         Hive.registerAdapter(TrackAdapter());
         print('✅ TrackAdapter registered in StorageService');

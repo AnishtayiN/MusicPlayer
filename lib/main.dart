@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'models/track.dart';
 import 'theme/app_theme.dart';
@@ -17,10 +18,17 @@ import 'widgets/update_dialog.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Hive first before any storage operations
+  await Hive.initFlutter();
+  print('✅ Hive initialized in main');
+
   final storage = StorageService();
   try {
     await storage.init();
-  } catch (_) {}
+    print('✅ StorageService initialized successfully');
+  } catch (e) {
+    print('❌ StorageService initialization failed: $e');
+  }
 
   // شروع امن: اگر سرویس پس‌زمینه شکست خورد، اپ همچنان بالا می‌آید
   PlayerService player;
