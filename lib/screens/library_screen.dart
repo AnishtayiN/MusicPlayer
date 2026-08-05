@@ -381,7 +381,7 @@ class _LibraryScreenState extends State<LibraryScreen>
               color: AppTheme.accent.withOpacity(AppTheme.isDark ? 0.15 : 0.10),
               child: Row(
                 children: [
-                  const Icon(Icons.folder, color: AppTheme.accent, size: 18),
+                  Icon(Icons.folder, color: AppTheme.accent, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -440,7 +440,7 @@ class _LibraryScreenState extends State<LibraryScreen>
             ),
           Expanded(
             child: _loading
-                ? const Center(
+                ? Center(
                     child:
                         CircularProgressIndicator(color: AppTheme.accent),
                   )
@@ -480,9 +480,9 @@ class _LibraryScreenState extends State<LibraryScreen>
                                 const SizedBox(height: 8),
                                 TextButton.icon(
                                   onPressed: _pickCustomFolder,
-                                  icon: const Icon(Icons.folder_open,
+                                  icon: Icon(Icons.folder_open,
                                       color: AppTheme.accent),
-                                  label: const Text(
+                                  label: Text(
                                     'انتخاب پوشه موزیک',
                                     style: TextStyle(color: AppTheme.accent),
                                   ),
