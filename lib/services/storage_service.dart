@@ -19,9 +19,7 @@ class StorageService {
     _settingsBoxRef = await Hive.openBox(_settingsBox);
   }
 
-  List<Track> getFavorites() {
-    return _favoritesBoxRef.values.toList();
-  }
+  List<Track> getFavorites() => _favoritesBoxRef.values.toList();
 
   Future<void> toggleFavorite(Track track) async {
     if (_favoritesBoxRef.containsKey(track.id)) {
@@ -31,9 +29,7 @@ class StorageService {
     }
   }
 
-  bool isFavorite(String trackId) {
-    return _favoritesBoxRef.containsKey(trackId);
-  }
+  bool isFavorite(String trackId) => _favoritesBoxRef.containsKey(trackId);
 
   List<Track> getPlaylist(String name) {
     final data = _playlistsBoxRef.get(name);
@@ -49,31 +45,31 @@ class StorageService {
     await _playlistsBoxRef.delete(name);
   }
 
-  List<String> getPlaylistNames() {
-    return _playlistsBoxRef.keys.cast<String>().toList();
-  }
+  List<String> getPlaylistNames() =>
+      _playlistsBoxRef.keys.cast<String>().toList();
 
-  String? getLastVersion() {
-    return _settingsBoxRef.get('lastVersion');
-  }
+  String? getLastVersion() => _settingsBoxRef.get('lastVersion');
 
   Future<void> setLastVersion(String version) async {
     await _settingsBoxRef.put('lastVersion', version);
   }
 
-  bool getSkipUpdate(String version) {
-    return _settingsBoxRef.get('skip_$version', defaultValue: false);
-  }
+  bool getSkipUpdate(String version) =>
+      _settingsBoxRef.get('skip_$version', defaultValue: false);
 
   Future<void> setSkipUpdate(String version, bool skip) async {
     await _settingsBoxRef.put('skip_$version', skip);
   }
 
-  String? getCustomFolderPath() {
-    return _settingsBoxRef.get('custom_folder_path');
-  }
+  String? getCustomFolderPath() => _settingsBoxRef.get('custom_folder_path');
 
   Future<void> setCustomFolderPath(String? path) async {
     await _settingsBoxRef.put('custom_folder_path', path);
+  }
+
+  bool isDarkTheme() => _settingsBoxRef.get('theme_dark', defaultValue: true);
+
+  Future<void> setDarkTheme(bool value) async {
+    await _settingsBoxRef.put('theme_dark', value);
   }
 }
