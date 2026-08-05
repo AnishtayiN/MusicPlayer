@@ -48,19 +48,33 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Inject version into pubspec
+        run: |
+          VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO_V="${VERSION_NO_V#v}"
+          sed -i "s/^version: .*/version: ${VERSION_NO_V}+${GITHUB_RUN_NUMBER}/" pubspec.yaml
+          echo "Pubspec version set to ${VERSION_NO_V}+${GITHUB_RUN_NUMBER}"
+
       - name: Get Flutter dependencies
         run: flutter pub get
 
       - name: Generate code
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
-      - name: Patch old plugin manifests (AGP 8+ compatibility)
+      - name: Patch old plugin manifests
         run: |
-          echo "Patching AndroidManifest.xml files in pub cache..."
           find ~/.pub-cache -name "AndroidManifest.xml" -type f 2>/dev/null | while read -r manifest; do
             if grep -q 'package="' "$manifest"; then
               sed -i 's/package="[^"]*"//g' "$manifest"
-              echo "Patched: $manifest"
             fi
           done
 
@@ -77,23 +91,16 @@ jobs:
           echo "keyPassword=$ANDROID_KEY_PASSWORD" >> android/key.properties
           echo "storePassword=$ANDROID_STORE_PASSWORD" >> android/key.properties
 
-      - name: Determine version
-        id: version
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO_V="${VERSION_NO_V#v}"
+          flutter build apk --release --dart-define=APP_VERSION=${VERSION_NO_V}
 
       - name: Prepare APK artifact
         run: |
           mkdir -p dist
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          cp build/app/outputs/apk/release/app-release.apk "dist/SonicWave-${VERSION}-android7plus.apk"
+          cp build/app/outputs/apk/release/app-release.apk "dist/SonicWave-${{ steps.version.outputs.VERSION }}-android7plus.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -117,6 +124,16 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Get Flutter dependencies
         run: flutter pub get
 
@@ -124,7 +141,11 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Flutter Web
-        run: flutter build web --release --no-tree-shake-icons
+        shell: bash
+        run: |
+          VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO_V="${VERSION_NO_V#v}"
+          flutter build web --release --dart-define=APP_VERSION=${VERSION_NO_V}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -138,16 +159,6 @@ jobs:
         run: npx electron-builder --win --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Determine version
-        id: version
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          fi
 
       - name: Prepare Windows artifact
         shell: bash
@@ -201,10 +212,8 @@ jobs:
           body: |
             ## SonicWave Music Player
             
-            نسخه جدید SonicWave با پشتیبانی از Android و Windows 7.
-            
             ### سازنده
-            - **Anish TayiN**
+            - **AnishtayiN**
             - تلگرام: [@AnishrayiN](https://t.me/AnishrayiN)
             - گیت‌هاب: [AnishtayiN](https://github.com/AnishtayiN)
           draft: false
