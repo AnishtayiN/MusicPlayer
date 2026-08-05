@@ -2,6 +2,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 
 import 'models/track.dart';
+import 'theme/app_theme.dart';
 import 'services/player_service.dart';
 import 'services/storage_service.dart';
 import 'services/update_service.dart';
@@ -33,7 +34,7 @@ Future<void> main() async {
   ));
 }
 
-class SonicWaveApp extends StatelessWidget {
+class SonicWaveApp extends StatefulWidget {
   final PlayerService playerService;
   final StorageService storageService;
 
@@ -44,22 +45,40 @@ class SonicWaveApp extends StatelessWidget {
   });
 
   @override
+  State<SonicWaveApp> createState() => _SonicWaveAppState();
+}
+
+class _SonicWaveAppState extends State<SonicWaveApp> {
+  late bool _isDark;
+
+  @override
+  void initState() {
+    super.initState();
+    _isDark = widget.storageService.isDarkTheme();
+    AppTheme.isDark = _isDark;
+  }
+
+  void _setTheme(bool dark) {
+    setState(() {
+      _isDark = dark;
+      AppTheme.isDark = dark;
+    });
+    widget.storageService.setDarkTheme(dark);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SonicWave',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B5CF6),
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF070B14),
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: _isDark ? ThemeMode.dark : ThemeMode.light,
       home: MainScreen(
-        playerService: playerService,
-        storageService: storageService,
+        playerService: widget.playerService,
+        storageService: widget.storageService,
+        isDark: _isDark,
+        onThemeChanged: _setTheme,
       ),
     );
   }
@@ -68,11 +87,15 @@ class SonicWaveApp extends StatelessWidget {
 class MainScreen extends StatefulWidget {
   final PlayerService playerService;
   final StorageService storageService;
+  final bool isDark;
+  final ValueChanged<bool> onThemeChanged;
 
   const MainScreen({
     super.key,
     required this.playerService,
     required this.storageService,
+    required this.isDark,
+    required this.onThemeChanged,
   });
 
   @override
@@ -96,9 +119,9 @@ class _MainScreenState extends State<MainScreen> {
     if (update == null) {
       if (manual) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('نسخه شما به‌روز است یا امکان بررسی وجود ندارد'),
-            backgroundColor: Color(0xFF111827),
+          SnackBar(
+            content: const Text('نسخه شما به‌روز است یا امکان بررسی وجود ندارد'),
+            backgroundColor: AppTheme.surface,
           ),
         );
       }
@@ -135,6 +158,8 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SettingsScreen(
+          isDark: widget.isDark,
+          onThemeChanged: widget.onThemeChanged,
           onCheckUpdate: () => _checkForUpdate(manual: true),
         ),
       ),
@@ -149,7 +174,7 @@ class _MainScreenState extends State<MainScreen> {
         final hasTrack = snapshot.data != null;
 
         return Scaffold(
-          backgroundColor: const Color(0xFF070B14),
+          backgroundColor: AppTheme.background,
           body: IndexedStack(
             index: _currentScreen,
             children: [
