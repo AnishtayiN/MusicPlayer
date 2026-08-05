@@ -123,7 +123,7 @@ class _LibraryScreenState extends State<LibraryScreen>
           );
 
           localTracks = songs
-              .where((s) => s.isMusic && s.duration != null && s.duration! > 0)
+              .where((s) => (s.isMusic ?? false) && s.duration != null && s.duration! > 0)
               .map((s) => Track(
                     id: 'local_${s.id}',
                     title: s.title,
