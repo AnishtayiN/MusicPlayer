@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,17 +18,25 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final storage = StorageService();
-  await storage.init();
+  try {
+    await storage.init();
+  } catch (_) {}
 
-  final player = await AudioService.init(
-    builder: () => PlayerService(storage),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.example.sonic_wave.audio',
-      androidNotificationChannelName: 'SonicWave',
-      androidNotificationOngoing: true,
-      androidStopForegroundOnPause: true,
-    ),
-  );
+  // شروع امن: اگر سرویس پس‌زمینه شکست خورد، اپ همچنان بالا می‌آید
+  PlayerService player;
+  try {
+    player = await AudioService.init(
+      builder: () => PlayerService(storage),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.example.sonic_wave.audio',
+        androidNotificationChannelName: 'SonicWave',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      ),
+    );
+  } catch (_) {
+    player = PlayerService(storage);
+  }
 
   onFilesDropped((paths) {
     final exts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'];
@@ -91,7 +97,8 @@ class _SonicWaveAppState extends State<SonicWaveApp> {
     AppTheme.darkAccentId = widget.storageService.getDarkAccent();
     AppTheme.lightAccentId = widget.storageService.getLightAccent();
     setTitleBarColor(
-        AppTheme.toHex(AppTheme.background), AppTheme.toHex(AppTheme.textPrimary));
+        AppTheme.toHex(AppTheme.background),
+        AppTheme.toHex(AppTheme.textPrimary));
   }
 
   @override
