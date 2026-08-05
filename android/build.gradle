@@ -18,14 +18,12 @@ allprojects {
                 }
             }
             
-            // هماهنگ کردن Kotlin JVM target برای همه پروژه‌ها
             tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                 kotlinOptions {
                     jvmTarget = "17"
                 }
             }
             
-            // Patch manifests برای حذف package attribute از پلاگین‌های قدیمی (AGP 8+)
             tasks.configureEach { task ->
                 if (task.name.startsWith('process') && task.name.endsWith('Manifest')) {
                     task.doFirst {
