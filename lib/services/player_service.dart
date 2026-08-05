@@ -6,105 +6,173 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/track.dart';
+import 'storage_service.dart';
 
 class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
   final AudioPlayer _player = AudioPlayer();
   final Random _random = Random();
+  final StorageService? storage;
 
   List<Track> _tracks = [];
-  int _currentIndex = 0;
+  int _currentIndex = -1;
   bool _shuffle = false;
   LoopMode _loopMode = LoopMode.off;
+  final Set<int> _played = {};
+  final List<int> _history = [];
 
-  StreamSubscription<Duration>? _positionSub;
-  StreamSubscription<Duration?>? _durationSub;
+  double _volume = 1.0;
+  double _savedVolume = 1.0;
+  double _speed = 1.0;
+  int _lastSavedSec = -1;
+
+  StreamSubscription<Duration>? _posSub;
   StreamSubscription<PlayerState>? _stateSub;
-  StreamSubscription<int?>? _indexSub;
 
-  PlayerService() {
+  PlayerService(this.storage) {
+    _volume = storage?.getVolume() ?? 1.0;
+    _speed = storage?.getSpeed() ?? 1.0;
     _init();
   }
 
-  Future<void> _init() async {
-    _positionSub = _player.positionStream.listen((position) {
-      playbackState.add(playbackState.value.copyWith(
-        updatePosition: position,
-      ));
-    });
-
-    _durationSub = _player.durationStream.listen((duration) {
-      if (duration != null) {
-        mediaItem.add(mediaItem.value?.copyWith(duration: duration));
+  void _init() {
+    _posSub = _player.positionStream.listen((p) {
+      playbackState.add(playbackState.value.copyWith(updatePosition: p));
+      final s = p.inSeconds;
+      if (s != _lastSavedSec && s % 5 == 0 && currentTrack != null) {
+        _lastSavedSec = s;
+        storage?.setLastSession(currentTrack!.id, p.inMilliseconds);
       }
     });
 
     _stateSub = _player.playerStateStream.listen((state) {
       playbackState.add(playbackState.value.copyWith(
         playing: state.playing,
-        processingState: _mapProcessingState(state.processingState),
+        processingState: _map(state.processingState),
       ));
-    });
-
-    _indexSub = _player.currentIndexStream.listen((index) {
-      if (index != null && index < _tracks.length) {
-        _currentIndex = index;
-        mediaItem.add(_tracksToMediaItem(_tracks[index]));
+      if (state.processingState == ProcessingState.completed) {
+        _handleComplete();
       }
     });
   }
 
-  AudioProcessingState _mapProcessingState(ProcessingState state) {
-    switch (state) {
-      case ProcessingState.idle:
-        return AudioProcessingState.idle;
-      case ProcessingState.loading:
-        return AudioProcessingState.loading;
-      case ProcessingState.buffering:
-        return AudioProcessingState.buffering;
-      case ProcessingState.ready:
-        return AudioProcessingState.ready;
-      case ProcessingState.completed:
-        return AudioProcessingState.completed;
+  AudioProcessingState _map(ProcessingState s) {
+    switch (s) {
+      case ProcessingState.idle: return AudioProcessingState.idle;
+      case ProcessingState.loading: return AudioProcessingState.loading;
+      case ProcessingState.buffering: return AudioProcessingState.buffering;
+      case ProcessingState.ready: return AudioProcessingState.ready;
+      case ProcessingState.completed: return AudioProcessingState.completed;
     }
   }
 
-  MediaItem _tracksToMediaItem(Track track) {
-    return MediaItem(
-      id: track.id,
-      title: track.title,
-      artist: track.artist,
-      artUri: track.artworkUrl != null ? Uri.tryParse(track.artworkUrl!) : null,
-      duration: Duration(milliseconds: track.durationMs ?? 0),
-    );
+  MediaItem _toMediaItem(Track t) => MediaItem(
+        id: t.id,
+        title: t.title,
+        artist: t.artist,
+        album: t.album,
+        artUri: t.artworkUrl != null ? Uri.tryParse(t.artworkUrl!) : null,
+        duration: Duration(milliseconds: t.durationMs ?? 0),
+      );
+
+  // ---------- بارگذاری ----------
+
+  Future<void> loadTracks(List<Track> tracks,
+      {int startIndex = 0, bool autoplay = true}) async {
+    _tracks = List.of(tracks);
+    _played.clear();
+    _history.clear();
+    queue.add(_tracks.map(_toMediaItem).toList());
+    if (_tracks.isEmpty) return;
+    await _loadIndex(startIndex.clamp(0, _tracks.length - 1),
+        autoplay: autoplay, recordHistory: false);
   }
 
-  Future<void> loadTracks(List<Track> tracks) async {
-    _tracks = tracks;
+  Future<void> addTracks(List<Track> added) async {
+    if (_tracks.isEmpty) {
+      await loadTracks(added);
+      return;
+    }
+    _tracks.addAll(added);
+    queue.add(_tracks.map(_toMediaItem).toList());
+    if (!playing) await _loadIndex(_tracks.length - added.length);
+  }
 
-    final audioSources = tracks.map((track) {
-      if (track.isLocal && track.localPath != null && !kIsWeb) {
-        return AudioSource.file(track.localPath!);
+  Future<void> _loadIndex(int i,
+      {bool autoplay = true, bool recordHistory = true}) async {
+    if (_tracks.isEmpty || i < 0 || i >= _tracks.length) return;
+    if (recordHistory && _currentIndex >= 0 && _currentIndex != i) {
+      _history.add(_currentIndex);
+    }
+    _currentIndex = i;
+    _played.add(i);
+    final t = _tracks[i];
+    try {
+      if (t.isLocal && t.localPath != null && !kIsWeb) {
+        await _player.setFilePath(t.localPath!);
       } else {
-        return AudioSource.uri(Uri.parse(track.url));
+        await _player.setUrl(t.url);
       }
-    }).toList();
-
-    await _player.setAudioSource(
-      ConcatenatingAudioSource(children: audioSources),
-      initialIndex: 0,
-      initialPosition: Duration.zero,
-    );
-
-    queue.add(tracks.map(_tracksToMediaItem).toList());
+      await _player.setVolume(_volume);
+      await _player.setSpeed(_speed);
+      mediaItem.add(_toMediaItem(t));
+      storage?.addHistory(t);
+      storage?.setLastSession(t.id, 0);
+      if (autoplay) await _player.play();
+    } catch (_) {}
   }
 
-  Future<void> stopAndClear() async {
-    await _player.stop();
-    _tracks = [];
-    _currentIndex = 0;
-    mediaItem.add(null);
-    queue.add(const []);
+  // ---------- حالت‌های پخش ----------
+
+  int _nextIndex({bool auto = false}) {
+    final n = _tracks.length;
+    if (n == 0) return -1;
+    if (_loopMode == LoopMode.one) return _currentIndex;
+
+    if (_shuffle) {
+      if (n == 1) {
+        if (_loopMode == LoopMode.all) return 0;
+        return auto ? -1 : 0;
+      }
+      var remaining = [
+        for (var i = 0; i < n; i++)
+          if (!_played.contains(i) && i != _currentIndex) i
+      ];
+      if (remaining.isEmpty) {
+        if (_loopMode == LoopMode.all) {
+          _played.clear();
+          _played.add(_currentIndex);
+          remaining = [for (var i = 0; i < n; i++) if (i != _currentIndex) i];
+        } else if (auto) {
+          return -1;
+        } else {
+          _played.clear();
+          _played.add(_currentIndex);
+          remaining = [for (var i = 0; i < n; i++) if (i != _currentIndex) i];
+        }
+      }
+      return remaining[_random.nextInt(remaining.length)];
+    }
+
+    final next = _currentIndex + 1;
+    if (next >= n) {
+      if (_loopMode == LoopMode.all) return 0;
+      return auto ? -1 : 0;
+    }
+    return next;
   }
+
+  void _handleComplete() {
+    if (_loopMode == LoopMode.one) {
+      _player.seek(Duration.zero);
+      _player.play();
+      return;
+    }
+    final idx = _nextIndex(auto: true);
+    if (idx == -1) return;
+    _loadIndex(idx);
+  }
+
+  // ---------- کنترل‌ها ----------
 
   @override
   Future<void> play() => _player.play();
@@ -117,79 +185,100 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
 
   @override
   Future<void> skipToNext() async {
-    if (_tracks.isEmpty) return;
-    await _player.seek(Duration.zero, index: _nextIndex());
-    await play();
+    final idx = _nextIndex();
+    if (idx == -1) return;
+    await _loadIndex(idx);
   }
 
   @override
   Future<void> skipToPrevious() async {
-    if (_tracks.isEmpty) return;
-
     if (_player.position.inSeconds > 3) {
       await seek(Duration.zero);
       return;
     }
-
-    await _player.seek(Duration.zero, index: _previousIndex());
-    await play();
+    if (_history.isNotEmpty) {
+      await _loadIndex(_history.removeLast(), recordHistory: false);
+    } else if (_currentIndex > 0) {
+      await _loadIndex(_currentIndex - 1);
+    } else {
+      await seek(Duration.zero);
+    }
   }
 
   @override
-  Future<void> skipToQueueItem(int index) async {
-    if (index < 0 || index >= _tracks.length) return;
-    await _player.seek(Duration.zero, index: index);
-    await play();
-  }
+  Future<void> skipToQueueItem(int index) async => _loadIndex(index);
 
-  int _nextIndex() {
-    if (_tracks.length <= 1) return _currentIndex;
-
-    if (_shuffle) {
-      int index;
-      do {
-        index = _random.nextInt(_tracks.length);
-      } while (index == _currentIndex);
-      return index;
-    }
-
-    return (_currentIndex + 1) % _tracks.length;
-  }
-
-  int _previousIndex() {
-    if (_tracks.length <= 1) return _currentIndex;
-    return (_currentIndex - 1 + _tracks.length) % _tracks.length;
+  Future<void> removeFromQueue(int index) async {
+    if (index == _currentIndex || index < 0 || index >= _tracks.length) return;
+    _tracks.removeAt(index);
+    if (_currentIndex > index) _currentIndex--;
+    _played.clear();
+    _history.clear();
+    queue.add(_tracks.map(_toMediaItem).toList());
   }
 
   Future<void> toggleShuffle() async {
     _shuffle = !_shuffle;
-    await _player.setShuffleModeEnabled(_shuffle);
+    _played.clear();
   }
 
   Future<void> cycleLoop() async {
     switch (_loopMode) {
-      case LoopMode.off:
-        _loopMode = LoopMode.all;
-        break;
-      case LoopMode.all:
-        _loopMode = LoopMode.one;
-        break;
-      case LoopMode.one:
-        _loopMode = LoopMode.off;
-        break;
+      case LoopMode.off: _loopMode = LoopMode.all; break;
+      case LoopMode.all: _loopMode = LoopMode.one; break;
+      case LoopMode.one: _loopMode = LoopMode.off; break;
     }
-
-    await _player.setLoopMode(_loopMode);
   }
 
+  // ---------- ولوم و سرعت ----------
+
+  double get volume => _volume;
+
+  Future<void> setVolume(double v) async {
+    _volume = v.clamp(0.0, 1.0);
+    await _player.setVolume(_volume);
+    storage?.setVolume(_volume);
+  }
+
+  Future<void> toggleMute() async {
+    if (_volume > 0) {
+      _savedVolume = _volume;
+      await setVolume(0);
+    } else {
+      await setVolume(_savedVolume > 0 ? _savedVolume : 1.0);
+    }
+  }
+
+  double get speed => _speed;
+
+  Future<void> setSpeed(double s) async {
+    _speed = s;
+    await _player.setSpeed(s);
+    storage?.setSpeed(s);
+  }
+
+  Future<void> stopAndClear() async {
+    await _player.stop();
+    _tracks = [];
+    _currentIndex = -1;
+    _played.clear();
+    _history.clear();
+    mediaItem.add(null);
+    queue.add(const []);
+  }
+
+  // ---------- getterها ----------
+
+  List<Track> get tracks => _tracks;
+  int get currentIndex => _currentIndex;
   bool get shuffleEnabled => _shuffle;
   LoopMode get loopMode => _loopMode;
-  int get currentIndex => _currentIndex;
+  bool get playing => _player.playing;
+  AudioPlayer get player => _player;
   Track? get currentTrack =>
-      _tracks.isNotEmpty && _currentIndex < _tracks.length
+      _tracks.isNotEmpty && _currentIndex >= 0 && _currentIndex < _tracks.length
           ? _tracks[_currentIndex]
           : null;
-  AudioPlayer get player => _player;
 
   @override
   Future<void> stop() async {
@@ -198,10 +287,8 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
   }
 
   void dispose() {
-    _positionSub?.cancel();
-    _durationSub?.cancel();
+    _posSub?.cancel();
     _stateSub?.cancel();
-    _indexSub?.cancel();
     _player.dispose();
   }
 }
