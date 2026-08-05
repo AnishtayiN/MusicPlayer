@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 
 import '../models/track.dart';
 import '../theme/app_theme.dart';
@@ -24,17 +22,6 @@ class TrackTile extends StatelessWidget {
   });
 
   Widget _art() {
-    if (track.artworkId != null && !kIsWeb) {
-      return ArtworkWidget(
-        key: Key('art_${track.artworkId}'),
-        type: ArtworkType.AUDIO,
-        id: track.artworkId!,
-        size: 48,
-        quality: 100,
-        artworkBorder: BorderRadius.circular(8),
-        errorWidget: Icon(Icons.music_note, color: AppTheme.textMuted),
-      );
-    }
     if (track.artworkUrl != null) {
       return Image.network(track.artworkUrl!, fit: BoxFit.cover,
           errorBuilder: (_, __, ___) =>
