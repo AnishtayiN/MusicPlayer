@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/track.dart';
 import '../theme/app_theme.dart';
@@ -67,6 +68,17 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.dispose();
   }
 
+  void _snack(String msg, {Color? color}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color ?? AppTheme.surface,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   String _baseName(String p) {
     final norm = p.replaceAll('\\', '/');
     final name = norm.split('/').last;
@@ -74,20 +86,184 @@ class _LibraryScreenState extends State<LibraryScreen>
     return dot > 0 ? name.substring(0, dot) : name;
   }
 
+  // ---------- منوی آهنگ ----------
+
+  void _onTrackMenu(Track track, String action) {
+    switch (action) {
+      case 'rename':
+        _renameTrack(track);
+        break;
+      case 'share':
+        _shareTrack(track);
+        break;
+      case 'delete':
+        _confirmDelete(track);
+        break;
+    }
+  }
+
+  Future<void> _renameTrack(Track track) async {
+    final path = track.localPath;
+
+    if (!track.isLocal || path == null) {
+      _snack('تغییر نام فقط برای فایل‌های محلی امکان‌پذیر است');
+      return;
+    }
+
+    final controller = TextEditingController(text: track.title);
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('تغییر نام آهنگ',
+            style: TextStyle(color: AppTheme.textPrimary)),
+        content: TextField(
+          controller: controller,
+          style: TextStyle(color: AppTheme.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'نام جدید',
+            hintStyle: TextStyle(color: AppTheme.textFaint),
+            filled: true,
+            fillColor: AppTheme.surfaceSoft,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('انصراف', style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('ذخیره'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    final newName = controller.text.trim();
+    if (newName.isEmpty) return;
+
+    final sep = path.contains('\\') ? '\\' : '/';
+    final lastSep = path.lastIndexOf(sep);
+    final dir = lastSep >= 0 ? path.substring(0, lastSep + 1) : '';
+    final dot = path.lastIndexOf('.');
+    final ext = dot > lastSep ? path.substring(dot) : '';
+    final newPath = '$dir$newName$ext';
+
+    bool success = false;
+
+    if (kIsWeb) {
+      success = await renameFileNative(path, newPath);
+    } else {
+      try {
+        final f = File(path);
+        if (await f.exists()) {
+          await f.rename(newPath);
+          success = true;
+        }
+      } catch (_) {}
+    }
+
+    _snack(success ? 'نام آهنگ تغییر کرد' : 'خطا در تغییر نام');
+    if (success) _loadTracks();
+  }
+
+  Future<void> _shareTrack(Track track) async {
+    if (kIsWeb) {
+      if (track.localPath != null) {
+        revealFileNative(track.localPath!);
+        _snack('پوشه فایل باز شد');
+      } else {
+        _snack('ارسال فقط برای فایل‌های محلی امکان‌پذیر است');
+      }
+      return;
+    }
+
+    if (track.isLocal && track.localPath != null) {
+      await Share.shareXFiles([XFile(track.localPath!)]);
+    } else {
+      await Share.share(track.url);
+    }
+  }
+
+  Future<void> _confirmDelete(Track track) async {
+    final conf = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('حذف آهنگ',
+            style: TextStyle(color: AppTheme.textPrimary)),
+        content: Text(
+          '«${track.title}» حذف شود؟',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('انصراف', style: TextStyle(color: AppTheme.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+
+    if (conf != true) return;
+
+    bool success = false;
+
+    if (track.isLocal && track.localPath != null) {
+      if (kIsWeb) {
+        success = await deleteFileNative(track.localPath!);
+      } else {
+        try {
+          final f = File(track.localPath!);
+          if (await f.exists()) {
+            await f.delete();
+            success = true;
+          }
+        } catch (_) {}
+      }
+      _snack(success ? 'آهنگ حذف شد' : 'خطا در حذف فایل');
+      if (success) _loadTracks();
+    } else {
+      setState(() {
+        _allTracks.removeWhere((t) => t.id == track.id);
+        _applyFilter();
+      });
+      _snack('از لیست حذف شد');
+    }
+  }
+
+  // ---------- پوشه و اسکن ----------
+
   Future<void> _pickCustomFolder() async {
     try {
       String? path;
 
       if (kIsWeb) {
         if (!isElectronBridgeAvailable) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('انتخاب پوشه فقط در نسخه دسکتاپ فعال است'),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-          }
+          _snack('انتخاب پوشه فقط در نسخه دسکتاپ فعال است',
+              color: Colors.redAccent);
           return;
         }
         path = await selectFolderNative();
@@ -99,40 +275,17 @@ class _LibraryScreenState extends State<LibraryScreen>
 
       if (path != null && path.isNotEmpty) {
         await widget.storageService.setCustomFolderPath(path);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('پوشه انتخاب شد: $path'),
-              backgroundColor: AppTheme.accent,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
+        _snack('پوشه انتخاب شد: $path', color: AppTheme.accent);
         _loadTracks();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطا در انتخاب پوشه: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      _snack('خطا در انتخاب پوشه: $e', color: Colors.redAccent);
     }
   }
 
   Future<void> _clearCustomFolder() async {
     await widget.storageService.setCustomFolderPath(null);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('پوشه انتخابی حذف شد، اسکن خودکار فعال است'),
-          backgroundColor: AppTheme.surface,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
+    _snack('پوشه انتخابی حذف شد، اسکن خودکار فعال است');
     _loadTracks();
   }
 
@@ -183,7 +336,7 @@ class _LibraryScreenState extends State<LibraryScreen>
               artist: 'Local File',
               url: localFileUrl(p),
               isLocal: true,
-              localPath: null,
+              localPath: p,
               durationMs: null,
             ))
         .toList();
@@ -432,8 +585,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                 children: [
                   Text(
                     '${_filteredTracks.length} آهنگ',
-                    style:
-                        TextStyle(color: AppTheme.textFaint, fontSize: 12),
+                    style: TextStyle(color: AppTheme.textFaint, fontSize: 12),
                   ),
                 ],
               ),
@@ -441,8 +593,7 @@ class _LibraryScreenState extends State<LibraryScreen>
           Expanded(
             child: _loading
                 ? Center(
-                    child:
-                        CircularProgressIndicator(color: AppTheme.accent),
+                    child: CircularProgressIndicator(color: AppTheme.accent),
                   )
                 : _error != null
                     ? Center(
@@ -453,8 +604,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                                 color: Colors.redAccent, size: 48),
                             const SizedBox(height: 12),
                             Text('خطا در بارگذاری',
-                                style: TextStyle(
-                                    color: AppTheme.textPrimary)),
+                                style: TextStyle(color: AppTheme.textPrimary)),
                             const SizedBox(height: 12),
                             ElevatedButton(
                               onPressed: _loadTracks,
@@ -475,8 +625,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                                     color: AppTheme.textFaint, size: 64),
                                 const SizedBox(height: 16),
                                 Text('هیچ آهنگی یافت نشد',
-                                    style: TextStyle(
-                                        color: AppTheme.textMuted)),
+                                    style: TextStyle(color: AppTheme.textMuted)),
                                 const SizedBox(height: 8),
                                 TextButton.icon(
                                   onPressed: _pickCustomFolder,
@@ -491,8 +640,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                             ),
                           )
                         : ListView.builder(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
                             itemCount: _filteredTracks.length,
                             itemBuilder: (context, index) {
                               final track = _filteredTracks[index];
@@ -506,14 +654,15 @@ class _LibraryScreenState extends State<LibraryScreen>
                                   isFavorite: widget.storageService
                                       .isFavorite(track.id),
                                   onTap: () {
-                                    widget.onPlayTrack(
-                                        track, _filteredTracks);
+                                    widget.onPlayTrack(track, _filteredTracks);
                                   },
                                   onFavoriteTap: () async {
                                     await widget.storageService
                                         .toggleFavorite(track);
                                     setState(() {});
                                   },
+                                  onMenuAction: (action) =>
+                                      _onTrackMenu(track, action),
                                 ),
                               );
                             },
