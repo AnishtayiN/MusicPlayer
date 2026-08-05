@@ -98,6 +98,15 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     queue.add(tracks.map(_tracksToMediaItem).toList());
   }
 
+  /// قطع کامل پخش و حذف آهنگ فعلی (برای دکمه ضربدر Mini Player)
+  Future<void> stopAndClear() async {
+    await _player.stop();
+    _tracks = [];
+    _currentIndex = 0;
+    mediaItem.add(null);
+    queue.add(const []);
+  }
+
   @override
   Future<void> play() => _player.play();
 
@@ -181,7 +190,10 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
   bool get shuffleEnabled => _shuffle;
   LoopMode get loopMode => _loopMode;
   int get currentIndex => _currentIndex;
-  Track? get currentTrack => _currentIndex < _tracks.length ? _tracks[_currentIndex] : null;
+  Track? get currentTrack =>
+      _currentIndex < _tracks.length && _tracks.isNotEmpty
+          ? _tracks[_currentIndex]
+          : null;
   AudioPlayer get player => _player;
 
   @override
