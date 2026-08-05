@@ -1,8 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+class SettingsScreen extends StatefulWidget {
+  final VoidCallback? onCheckUpdate;
+
+  const SettingsScreen({super.key, this.onCheckUpdate});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _version = '...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _version = info.version);
+      }
+    } catch (_) {}
+  }
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
@@ -28,6 +53,20 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _buildSection(
+            title: 'به‌روزرسانی',
+            children: [
+              _buildActionCard(
+                icon: Icons.system_update,
+                title: 'بررسی آپدیت',
+                subtitle: 'چک کردن آخرین نسخه از گیت‌هاب',
+                onTap: () {
+                  if (widget.onCheckUpdate != null) widget.onCheckUpdate!();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildSection(
             title: 'درباره سازنده',
             children: [
               _buildInfoCard(
@@ -37,7 +76,7 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _buildActionCard(
-                icon: Icons.telegram,
+                icon: Icons.send,
                 title: 'تلگرام',
                 subtitle: '@AnishrayiN',
                 onTap: () => _launchUrl('https://t.me/AnishrayiN'),
@@ -63,8 +102,8 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _buildInfoCard(
                 icon: Icons.tag,
-                title: 'نسخه',
-                subtitle: '1.0.0',
+                title: 'نسخه فعلی',
+                subtitle: _version,
               ),
             ],
           ),
