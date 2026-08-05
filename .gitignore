@@ -1,38 +1,43 @@
 ```
 # Android build outputs
-android/build/
 android/app/build/
 android/.gradle/
+android/build/
+
+# Android resource files (keeping the XML ones that were added)
+!android/app/src/main/res/mipmap-hdpi/ic_launcher.xml
+!android/app/src/main/res/mipmap-mdpi/ic_launcher.xml
+!android/app/src/main/res/mipmap-xhdpi/ic_launcher.xml
+!android/app/src/main/res/mipmap-xxhdpi/ic_launcher.xml
+!android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.xml
+
+# Compiled and build artifacts
 *.apk
 *.aar
+*.so
 *.dex
+gen/
+out/
 
-# Android studio files
+# Dependencies
+node_modules/
+vendor/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
 .idea/
-*.iml
-*.iws
-*.log
 
-# Gradle
-.gradle/
-!gradle/wrapper/
-
-# Local configuration file (sdk path, etc)
-local.properties
-
-# Keystore properties file
-key.properties
-
-# Log Files
-*.log
-
-# Android cache
-.cache/
-
-# Code coverage reports
-coverage/
-*.ec
-
-# Unit test reports
-test-results/
+# OS generated files
+.DS_Store
+Thumbs.db
 ```
