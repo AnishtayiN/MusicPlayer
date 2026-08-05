@@ -6,6 +6,7 @@ import 'theme/app_theme.dart';
 import 'services/player_service.dart';
 import 'services/storage_service.dart';
 import 'services/update_service.dart';
+import 'utils/web_bridge.dart';
 import 'screens/player_screen.dart';
 import 'screens/library_screen.dart';
 import 'screens/settings_screen.dart';
@@ -62,6 +63,12 @@ class _SonicWaveAppState extends State<SonicWaveApp> {
     AppTheme.isDark = _isDark;
     AppTheme.darkAccentId = widget.storageService.getDarkAccent();
     AppTheme.lightAccentId = widget.storageService.getLightAccent();
+
+    // هماهنگ‌سازی رنگ نوار عنوان ویندوز با تم
+    setTitleBarColor(
+      AppTheme.toHex(AppTheme.background),
+      AppTheme.toHex(AppTheme.textPrimary),
+    );
   }
 
   void _onThemeUpdated() {
@@ -106,14 +113,33 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final UpdateService _updateService = UpdateService();
   int _currentScreen = 0;
 
   @override
   void initState() {
     super.initState();
-    _checkForUpdate();
+    WidgetsBinding.instance.addObserver(this);
+
+    // بررسی آپدیت خودکار با کمی تاخیر (بعد از آماده شدن UI)
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) _checkForUpdate();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // بررسی آپدیت وقتی کاربر به برنامه برمی‌گردد
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkForUpdate();
+    }
   }
 
   Future<void> _checkForUpdate({bool manual = false}) async {
