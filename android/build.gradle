@@ -13,6 +13,27 @@ subprojects {
 
 subprojects {
     project.evaluationDependsOn(':app')
+
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                if (project.android.namespace == null) {
+                    def manifest = project.file("src/main/AndroidManifest.xml")
+                    if (manifest.exists()) {
+                        def packageName = new XmlParser().parse(manifest).@package
+                        if (packageName != null && !packageName.isEmpty()) {
+                            project.android.namespace = packageName
+                        } else {
+                            project.android.namespace = "com.example.${project.name.replaceAll('-', '_')}"
+                        }
+                    } else {
+                        project.android.namespace = "com.example.${project.name.replaceAll('-', '_')}"
+                    }
+                }
+                compileSdkVersion 35
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
