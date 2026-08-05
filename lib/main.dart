@@ -89,10 +89,23 @@ class _MainScreenState extends State<MainScreen> {
     _checkForUpdate();
   }
 
-  Future<void> _checkForUpdate() async {
+  Future<void> _checkForUpdate({bool manual = false}) async {
     final update = await _updateService.checkForUpdate();
-    if (update == null || !mounted) return;
-    if (widget.storageService.getSkipUpdate(update.version)) return;
+    if (!mounted) return;
+
+    if (update == null) {
+      if (manual) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('نسخه شما به‌روز است یا امکان بررسی وجود ندارد'),
+            backgroundColor: Color(0xFF111827),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!manual && widget.storageService.getSkipUpdate(update.version)) return;
 
     showDialog(
       context: context,
@@ -120,7 +133,11 @@ class _MainScreenState extends State<MainScreen> {
 
   void _openSettings(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+      MaterialPageRoute(
+        builder: (_) => SettingsScreen(
+          onCheckUpdate: () => _checkForUpdate(manual: true),
+        ),
+      ),
     );
   }
 
