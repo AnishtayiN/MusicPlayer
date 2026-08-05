@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import '../models/track.dart';
 import '../services/storage_service.dart';
 import '../widgets/track_tile.dart';
@@ -58,6 +62,85 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.dispose();
   }
 
+  Future<void> _pickCustomFolder() async {
+    try {
+      final path = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: 'پوشه موزیک خود را انتخاب کنید',
+        lockParentWindow: true,
+      );
+
+      if (path != null && path.isNotEmpty) {
+        await widget.storageService.setCustomFolderPath(path);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('پوشه انتخاب شد: $path'),
+              backgroundColor: const Color(0xFF8B5CF6),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+
+        _loadTracks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در انتخاب پوشه: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearCustomFolder() async {
+    await widget.storageService.setCustomFolderPath(null);
+    _loadTracks();
+  }
+
+  Future<List<Track>> _scanFolder(String path) async {
+    final List<Track> tracks = [];
+    final extensions = {'.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'};
+
+    try {
+      final dir = Directory(path);
+      if (!await dir.exists()) return tracks;
+
+      final entities = await dir.list(recursive: true, followLinks: false).toList();
+
+      int index = 0;
+      for (final entity in entities) {
+        if (entity is File) {
+          final ext = entity.path.toLowerCase();
+          if (extensions.any((e) => ext.endsWith(e))) {
+            index++;
+            final fileName = entity.path.split(Platform.pathSeparator).last;
+            final title = fileName.split('.').first;
+
+            tracks.add(Track(
+              id: 'folder_$index',
+              title: title,
+              artist: 'Local File',
+              url: entity.path,
+              isLocal: true,
+              localPath: entity.path,
+              durationMs: null,
+            ));
+          }
+        }
+      }
+
+      tracks.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    } catch (e) {
+      // Scan failed
+    }
+
+    return tracks;
+  }
+
   Future<void> _loadTracks() async {
     setState(() {
       _loading = true;
@@ -101,42 +184,49 @@ class _LibraryScreenState extends State<LibraryScreen>
       ];
 
       List<Track> localTracks = [];
+      final customPath = widget.storageService.getCustomFolderPath();
 
-      try {
-        final status = await Permission.audio.status;
-        PermissionStatus finalStatus = status;
+      // اسکن پوشه سفارشی (اگر انتخاب شده)
+      if (customPath != null && customPath.isNotEmpty) {
+        localTracks = await _scanFolder(customPath);
+      } else {
+        // اسکن خودکار از Media Store
+        try {
+          final status = await Permission.audio.status;
+          PermissionStatus finalStatus = status;
 
-        if (!status.isGranted) {
-          finalStatus = await Permission.audio.request();
+          if (!status.isGranted) {
+            finalStatus = await Permission.audio.request();
+          }
+
+          if (!finalStatus.isGranted) {
+            finalStatus = await Permission.storage.request();
+          }
+
+          if (finalStatus.isGranted) {
+            final songs = await _audioQuery.querySongs(
+              sortType: SongSortType.TITLE,
+              orderType: OrderType.ASC_OR_SMALLER,
+              uriType: UriType.EXTERNAL,
+              ignoreCase: true,
+            );
+
+            localTracks = songs
+                .where((s) => (s.isMusic ?? false) && s.duration != null && s.duration! > 0)
+                .map((s) => Track(
+                      id: 'local_${s.id}',
+                      title: s.title,
+                      artist: s.artist ?? 'Unknown',
+                      url: s.uri ?? s.data,
+                      isLocal: true,
+                      localPath: s.data,
+                      durationMs: s.duration,
+                    ))
+                .toList();
+          }
+        } catch (e) {
+          // Local scan failed
         }
-
-        if (!finalStatus.isGranted) {
-          finalStatus = await Permission.storage.request();
-        }
-
-        if (finalStatus.isGranted) {
-          final songs = await _audioQuery.querySongs(
-            sortType: SongSortType.TITLE,
-            orderType: OrderType.ASC_OR_SMALLER,
-            uriType: UriType.EXTERNAL,
-            ignoreCase: true,
-          );
-
-          localTracks = songs
-              .where((s) => (s.isMusic ?? false) && s.duration != null && s.duration! > 0)
-              .map((s) => Track(
-                    id: 'local_${s.id}',
-                    title: s.title,
-                    artist: s.artist ?? 'Unknown',
-                    url: s.uri ?? s.data,
-                    isLocal: true,
-                    localPath: s.data,
-                    durationMs: s.duration,
-                  ))
-              .toList();
-        }
-      } catch (e) {
-        // Local scan failed, continue with demo tracks.
       }
 
       setState(() {
@@ -190,6 +280,19 @@ class _LibraryScreenState extends State<LibraryScreen>
           style: TextStyle(color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            onPressed: _pickCustomFolder,
+            icon: const Icon(Icons.folder_open, color: Colors.white70),
+            tooltip: 'انتخاب پوشه موزیک',
+          ),
+          if (widget.storageService.getCustomFolderPath() != null)
+            IconButton(
+              onPressed: _clearCustomFolder,
+              icon: const Icon(Icons.close, color: Colors.white70),
+              tooltip: 'حذف پوشه انتخابی',
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: const Color(0xFF8B5CF6),
@@ -204,6 +307,33 @@ class _LibraryScreenState extends State<LibraryScreen>
       ),
       body: Column(
         children: [
+          if (widget.storageService.getCustomFolderPath() != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: const Color.fromRGBO(139, 92, 246, 0.15),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.folder,
+                    color: Color(0xFF8B5CF6),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      widget.storageService.getCustomFolderPath()!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -266,10 +396,33 @@ class _LibraryScreenState extends State<LibraryScreen>
                         ),
                       )
                     : _filteredTracks.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'هیچ آهنگی یافت نشد',
-                              style: TextStyle(color: Colors.white54),
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.library_music,
+                                  color: Colors.white24,
+                                  size: 64,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'هیچ آهنگی یافت نشد',
+                                  style: TextStyle(color: Colors.white54),
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton.icon(
+                                  onPressed: _pickCustomFolder,
+                                  icon: const Icon(
+                                    Icons.folder_open,
+                                    color: Color(0xFF8B5CF6),
+                                  ),
+                                  label: const Text(
+                                    'انتخاب پوشه موزیک',
+                                    style: TextStyle(color: Color(0xFF8B5CF6)),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(
