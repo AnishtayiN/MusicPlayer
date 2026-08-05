@@ -87,7 +87,6 @@ class _LibraryScreenState extends State<LibraryScreen>
     return dot > 0 ? name.substring(0, dot) : name;
   }
 
-  // ---------- منو ----------
   void _onTrackMenu(Track track, String action) {
     if (action == 'rename') _renameTrack(track);
     if (action == 'share') _shareTrack(track);
@@ -210,7 +209,6 @@ class _LibraryScreenState extends State<LibraryScreen>
     }
   }
 
-  // ---------- اسکن ----------
   Future<void> _pickCustomFolder() async {
     try {
       String? path;
@@ -306,7 +304,6 @@ class _LibraryScreenState extends State<LibraryScreen>
             ? await _scanFolderWeb(customPath)
             : await _scanFolder(customPath);
       } else if (kIsWeb) {
-        // اسکن خودکار پوشه Music ویندوز
         final musicDir = await getMusicDirNative();
         if (musicDir != null) localTracks = await _scanFolderWeb(musicDir);
       } else {
@@ -344,7 +341,6 @@ class _LibraryScreenState extends State<LibraryScreen>
       _allTracks = [...demoTracks, ...localTracks];
       _applyFilter();
 
-      // بازیابی آخرین پخش
       if (widget.playerService.currentTrack == null) {
         final lastId = widget.storageService.getLastTrackId();
         final idx = _allTracks.indexWhere((t) => t.id == lastId);
