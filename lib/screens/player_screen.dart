@@ -91,7 +91,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                   Container(
                     width: 80,
                     height: 80,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
                         colors: [AppTheme.accent, AppTheme.accent2],
