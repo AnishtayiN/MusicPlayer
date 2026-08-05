@@ -1,38 +1,47 @@
-name: sonic_wave
-description: SonicWave music player for Android and Windows 7.
-publish_to: "none"
-version: 1.0.0+1
-
-environment:
-  sdk: ">=3.4.0 <4.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-  cupertino_icons: ^1.0.8
-  audioplayers: ^6.0.0
-  audio_service: ^0.18.15
-  just_audio: ^0.9.40
-  just_audio_background: ^0.0.1-beta.13
-  on_audio_query: ^2.9.0
-  permission_handler: ^11.3.1
-  hive_flutter: ^1.1.0
-  http: ^1.2.2
-  package_info_plus: ^8.0.2
-  url_launcher: ^6.3.0
-  path_provider: ^2.1.4
-  dio: ^5.5.0+1
-  palette_generator: ^0.3.3+4
-  cached_network_image: ^3.4.1
-  file_picker: ^8.0.0
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^4.0.0
-  hive_generator: ^2.0.1
-  build_runner: ^2.4.11
-
-flutter:
-  uses-material-design: true
+{
+  "name": "sonic_wave",
+  "productName": "SonicWave",
+  "version": "1.0.0",
+  "description": "SonicWave music player by Anish TayiN",
+  "author": "AnishtayiN",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "build:win": "electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "com.example.sonicwave",
+    "productName": "SonicWave",
+    "directories": {
+      "output": "dist_electron",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "build/web/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["ia32"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SonicWave",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "SonicWaveSetup.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "22.3.27",
+    "electron-builder": "24.13.3"
+  }
+}
