@@ -9,6 +9,7 @@ class TrackTile extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onTap;
   final VoidCallback onFavoriteTap;
+  final ValueChanged<String>? onMenuAction;
 
   const TrackTile({
     super.key,
@@ -17,6 +18,7 @@ class TrackTile extends StatelessWidget {
     required this.isFavorite,
     required this.onTap,
     required this.onFavoriteTap,
+    this.onMenuAction,
   });
 
   @override
@@ -88,10 +90,8 @@ class TrackTile extends StatelessWidget {
                       track.artist,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 12,
-                      ),
+                      style:
+                          TextStyle(color: AppTheme.textMuted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -109,6 +109,51 @@ class TrackTile extends StatelessWidget {
                   color: isFavorite ? AppTheme.accent : AppTheme.iconInactive,
                   size: 22,
                 ),
+              ),
+              PopupMenuButton<String>(
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.more_vert,
+                    color: AppTheme.textMuted, size: 20),
+                color: AppTheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (v) => onMenuAction?.call(v),
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'rename',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, color: AppTheme.textSecondary, size: 18),
+                        const SizedBox(width: 10),
+                        Text('تغییر نام',
+                            style: TextStyle(color: AppTheme.textPrimary)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'share',
+                    child: Row(
+                      children: [
+                        Icon(Icons.share, color: AppTheme.textSecondary, size: 18),
+                        const SizedBox(width: 10),
+                        Text('ارسال',
+                            style: TextStyle(color: AppTheme.textPrimary)),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                        const SizedBox(width: 10),
+                        Text('حذف',
+                            style: TextStyle(color: AppTheme.textPrimary)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
