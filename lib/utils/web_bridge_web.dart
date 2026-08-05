@@ -1,45 +1,31 @@
 import 'dart:js_util' as js_util;
 
-/// نسخه وب / Electron (ویندوز)
 dynamic get _bridge => js_util.getProperty(js_util.globalThis, 'sonicwave');
 
 bool get isElectronBridgeAvailable => _bridge != null;
 
-Future<String?> selectFolderNative() async {
-  final bridge = _bridge;
-  if (bridge == null) return null;
-
+Future<dynamic> _call(String method, [List args = const []]) async {
+  final b = _bridge;
+  if (b == null) return null;
   try {
-    final promise = js_util.callMethod(bridge, 'selectFolder', []);
-    final result = await js_util.promiseToFuture(promise);
-    return result as String?;
+    return await js_util.promiseToFuture(js_util.callMethod(b, method, args));
   } catch (_) {
     return null;
   }
 }
 
-Future<List<String>> listAudioFilesNative(String folderPath) async {
-  final bridge = _bridge;
-  if (bridge == null) return const [];
+Future<String?> selectFolderNative() async =>
+    await _call('selectFolder') as String?;
 
-  try {
-    final promise = js_util.callMethod(bridge, 'listAudioFiles', [folderPath]);
-    final result = await js_util.promiseToFuture(promise);
-
-    if (result is List) {
-      return result.map((e) => e.toString()).toList();
-    }
-    return const [];
-  } catch (_) {
-    return const [];
-  }
+Future<List<String>> listAudioFilesNative(String p) async {
+  final r = await _call('listAudioFiles', [p]);
+  if (r is List) return r.map((e) => e.toString()).toList();
+  return const [];
 }
 
-String localFileUrl(String filePath) {
-  return Uri.base
-      .resolve('/localfile?path=${Uri.encodeQueryComponent(filePath)}')
-      .toString();
-}
+String localFileUrl(String p) => Uri.base
+    .resolve('/localfile?path=${Uri.encodeQueryComponent(p)}')
+    .toString();
 
 void setTitleBarColor(String bg, String fg) {
   try {
@@ -50,37 +36,44 @@ void setTitleBarColor(String bg, String fg) {
   } catch (_) {}
 }
 
-Future<bool> renameFileNative(String oldPath, String newPath) async {
-  final bridge = _bridge;
-  if (bridge == null) return false;
+Future<bool> renameFileNative(String a, String b) async =>
+    (await _call('renameFile', [a, b])) == true;
 
-  try {
-    final promise = js_util.callMethod(bridge, 'renameFile', [oldPath, newPath]);
-    final result = await js_util.promiseToFuture(promise);
-    return result == true;
-  } catch (_) {
-    return false;
-  }
+Future<bool> deleteFileNative(String p) async =>
+    (await _call('deleteFile', [p])) == true;
+
+void revealFileNative(String p) {
+  _call('revealFile', [p]);
 }
 
-Future<bool> deleteFileNative(String path) async {
-  final bridge = _bridge;
-  if (bridge == null) return false;
-
-  try {
-    final promise = js_util.callMethod(bridge, 'deleteFile', [path]);
-    final result = await js_util.promiseToFuture(promise);
-    return result == true;
-  } catch (_) {
-    return false;
-  }
+Future<Map<String, dynamic>?> getMetadataNative(String p) async {
+  final r = await _call('getMetadata', [p]);
+  if (r is Map) return Map<String, dynamic>.from(r);
+  return null;
 }
 
-void revealFileNative(String path) {
-  final bridge = _bridge;
-  if (bridge == null) return;
+Future<String?> readFileTextNative(String p) async =>
+    await _call('readFileText', [p]) as String?;
 
-  try {
-    js_util.callMethod(bridge, 'revealFile', [path]);
-  } catch (_) {}
+Future<String?> getMusicDirNative() async =>
+    await _call('getMusicDir') as String?;
+
+void onFilesDropped(void Function(List<String>) handler) {
+  final b = _bridge;
+  if (b == null) return;
+  js_util.callMethod(b, 'onFilesDropped', [
+    js_util.allowInterop((dynamic paths) {
+      if (paths is List) handler(paths.map((e) => e.toString()).toList());
+    })
+  ]);
+}
+
+void onMediaKey(void Function(String) handler) {
+  final b = _bridge;
+  if (b == null) return;
+  js_util.callMethod(b, 'onMediaKey', [
+    js_util.allowInterop((dynamic key) {
+      handler(key.toString());
+    })
+  ]);
 }
