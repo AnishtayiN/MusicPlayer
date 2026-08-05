@@ -6,12 +6,26 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
-  /// ⚠️ این دو مقدار باید دقیقاً با نام کاربری و نام ریپوی گیت‌هاب تو یکی باشند
+  /// ⚠️ باید با نام کاربری و ریپوی گیت‌هاب تو یکی باشد
   static const String githubOwner = 'AnishtayiN';
   static const String githubRepo = 'MusicPlayer';
 
+  static const String _definedVersion =
+      String.fromEnvironment('APP_VERSION');
+
   static String get githubApiUrl =>
       'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
+
+  /// نسخه فعلی اپ (اول dart-define، بعد PackageInfo)
+  static Future<String> getCurrentVersion() async {
+    if (_definedVersion.isNotEmpty) return _definedVersion;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      return info.version.trim().isEmpty ? '0.0.0' : info.version.trim();
+    } catch (_) {
+      return '0.0.0';
+    }
+  }
 
   Future<UpdateInfo?> checkForUpdate() async {
     try {
@@ -29,11 +43,7 @@ class UpdateService {
       if (tagName == null) return null;
 
       final latestVersion = tagName.replaceFirst('v', '').trim();
-
-      final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version.trim().isEmpty
-          ? '0.0.0'
-          : packageInfo.version.trim();
+      final currentVersion = await getCurrentVersion();
 
       if (!_isNewerVersion(latestVersion, currentVersion)) return null;
 
@@ -51,7 +61,6 @@ class UpdateService {
     }
   }
 
-  /// انتخاب فایل مناسب بر اساس پلتفرم (APK برای اندروید، EXE برای ویندوز)
   String? _pickAssetUrl(List assets) {
     String? apkUrl;
     String? exeUrl;
