@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../theme/app_theme.dart';
+import '../services/update_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback? onCheckUpdate;
+  final bool isDark;
+  final ValueChanged<bool>? onThemeChanged;
 
-  const SettingsScreen({super.key, this.onCheckUpdate});
+  const SettingsScreen({
+    super.key,
+    this.onCheckUpdate,
+    required this.isDark,
+    this.onThemeChanged,
+  });
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -21,12 +30,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      if (mounted) {
-        setState(() => _version = info.version);
-      }
-    } catch (_) {}
+    final v = await UpdateService.getCurrentVersion();
+    if (mounted) setState(() => _version = v);
   }
 
   Future<void> _launchUrl(String url) async {
@@ -39,19 +44,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF070B14),
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'تنظیمات',
-          style: TextStyle(color: Colors.white),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('تنظیمات', style: TextStyle(color: AppTheme.textPrimary)),
+        iconTheme: IconThemeData(color: AppTheme.iconActive),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSection(
+            title: 'ظاهر',
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceSoft,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.cardBorder),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [AppTheme.accent, AppTheme.accent2],
+                        ),
+                      ),
+                      child: Icon(
+                        widget.isDark ? Icons.dark_mode : Icons.light_mode,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'تم تیره',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.isDark ? 'فعال (شب)' : 'غیرفعال (روز)',
+                            style: TextStyle(
+                              color: AppTheme.textMuted,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: widget.isDark,
+                      activeColor: AppTheme.accent,
+                      onChanged: (v) => widget.onThemeChanged?.call(v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
           _buildSection(
             title: 'به‌روزرسانی',
             children: [
@@ -59,9 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.system_update,
                 title: 'بررسی آپدیت',
                 subtitle: 'چک کردن آخرین نسخه از گیت‌هاب',
-                onTap: () {
-                  if (widget.onCheckUpdate != null) widget.onCheckUpdate!();
-                },
+                onTap: () => widget.onCheckUpdate?.call(),
               ),
             ],
           ),
@@ -118,8 +180,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -138,9 +200,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color.fromRGBO(255, 255, 255, 0.05),
+        color: AppTheme.surfaceSoft,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: AppTheme.cardBorder),
       ),
       child: Row(
         children: [
@@ -150,10 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8B5CF6),
-                  Color(0xFF06B6D4),
-                ],
+                colors: [AppTheme.accent, AppTheme.accent2],
               ),
             ),
             child: Icon(icon, color: Colors.white, size: 24),
@@ -165,8 +224,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -174,10 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
                 ),
               ],
             ),
@@ -201,9 +257,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color.fromRGBO(255, 255, 255, 0.05),
+            color: AppTheme.surfaceSoft,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white12),
+            border: Border.all(color: AppTheme.cardBorder),
           ),
           child: Row(
             children: [
@@ -213,10 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF8B5CF6),
-                      Color(0xFF06B6D4),
-                    ],
+                    colors: [AppTheme.accent, AppTheme.accent2],
                   ),
                 ),
                 child: Icon(icon, color: Colors.white, size: 24),
@@ -228,8 +281,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -237,19 +290,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
                     ),
                   ],
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white38,
-                size: 20,
-              ),
+              Icon(Icons.arrow_forward_ios,
+                  color: AppTheme.textFaint, size: 20),
             ],
           ),
         ),
