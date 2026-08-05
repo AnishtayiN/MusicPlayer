@@ -51,7 +51,7 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Generate code (Hive adapters, etc.)
+      - name: Generate code
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Analyze code
@@ -118,7 +118,7 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
-      - name: Generate code (Hive adapters, etc.)
+      - name: Generate code
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Analyze code
@@ -130,7 +130,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Flutter Web
-        run: flutter build web --release --base-href ./ --no-tree-shake-icons
+        run: flutter build web --release --no-tree-shake-icons
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -162,11 +162,7 @@ jobs:
           VERSION="${{ steps.version.outputs.VERSION }}"
           if [ -f "dist_electron/SonicWaveSetup.exe" ]; then
             cp "dist_electron/SonicWaveSetup.exe" "dist/SonicWave-${VERSION}-windows7plus-setup.exe"
-          elif [ -f "dist_electron/SonicWave Setup.exe" ]; then
-            cp "dist_electron/SonicWave Setup.exe" "dist/SonicWave-${VERSION}-windows7plus-setup.exe"
           else
-            echo "Looking for exe in dist_electron..."
-            find dist_electron -name "*.exe" -type f
             EXE_FILE=$(find dist_electron -name "*.exe" -type f | head -n 1)
             if [ -n "$EXE_FILE" ]; then
               cp "$EXE_FILE" "dist/SonicWave-${VERSION}-windows7plus-setup.exe"
@@ -194,11 +190,6 @@ jobs:
         with:
           path: artifacts
 
-      - name: List artifacts
-        run: |
-          echo "Downloaded artifacts:"
-          find artifacts -type f | sort
-
       - name: Determine version
         id: version
         run: |
@@ -222,18 +213,6 @@ jobs:
             - **Anish TayiN**
             - تلگرام: [@AnishrayiN](https://t.me/AnishrayiN)
             - گیت‌هاب: [AnishtayiN](https://github.com/AnishtayiN)
-            
-            ### دانلود
-            - **Android 7.0+**: فایل APK
-            - **Windows 7 SP1+**: فایل Setup EXE
-            
-            ### ویژگی‌ها
-            - پخش موزیک لوکال و آنلاین
-            - Favorite و Playlist
-            - جستجوی پیشرفته
-            - Background playback
-            - تم پویا بر اساس کاور آهنگ
-            - آپدیت خودکار
           draft: false
           prerelease: false
           files: |
@@ -241,8 +220,3 @@ jobs:
             artifacts/windows-exe/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cleanup artifacts
-        if: always()
-        run: |
-          rm -rf artifacts
