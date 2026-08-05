@@ -24,7 +24,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.example.sonic_wave"
+    namespace "com.AnishtayiN.SonicWave"
     compileSdk 35
     ndkVersion flutter.ndkVersion
 
@@ -42,7 +42,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.sonic_wave"
+        applicationId "com.AnishtayiN.SonicWave"
         minSdkVersion 24
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()

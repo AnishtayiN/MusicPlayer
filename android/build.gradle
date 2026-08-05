@@ -8,7 +8,7 @@ allprojects {
         if (plugins.hasPlugin('com.android.library') || plugins.hasPlugin('com.android.application')) {
             android {
                 if (namespace == null) {
-                    namespace = "com.example.${name.replaceAll('-', '_')}"
+                    namespace = "com.AnishtayiN.${name.replaceAll('-', '_')}"
                 }
                 compileSdkVersion 35
                 
