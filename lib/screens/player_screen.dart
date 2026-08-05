@@ -2,7 +2,9 @@ import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:palette_generator/palette_generator.dart';
+
 import '../models/track.dart';
+import '../theme/app_theme.dart';
 import '../services/player_service.dart';
 import '../services/storage_service.dart';
 
@@ -54,13 +56,13 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Future<void> _updatePalette(Uri uri) async {
     try {
-      final generator = await PaletteGenerator.fromImageProvider(
-        NetworkImage(uri.toString()),
-      );
+      final generator =
+          await PaletteGenerator.fromImageProvider(NetworkImage(uri.toString()));
 
       if (mounted) {
         setState(() {
-          _dominantColor = generator.dominantColor?.color ?? const Color(0xFF8B5CF6);
+          _dominantColor =
+              generator.dominantColor?.color ?? const Color(0xFF8B5CF6);
         });
       }
     } catch (_) {}
@@ -81,7 +83,7 @@ class _PlayerScreenState extends State<PlayerScreen>
 
         if (currentTrack == null) {
           return Scaffold(
-            backgroundColor: const Color(0xFF070B14),
+            backgroundColor: AppTheme.background,
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -92,31 +94,25 @@ class _PlayerScreenState extends State<PlayerScreen>
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [
-                          Color(0xFF8B5CF6),
-                          Color(0xFF06B6D4),
-                        ],
+                        colors: [AppTheme.accent, AppTheme.accent2],
                       ),
                     ),
-                    child: const Icon(
-                      Icons.music_note,
-                      color: Colors.white,
-                      size: 40,
-                    ),
+                    child: const Icon(Icons.music_note,
+                        color: Colors.white, size: 40),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
+                  Text(
                     'SonicWave',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'از کتابخانه یک آهنگ انتخاب کن',
-                    style: TextStyle(color: Colors.white54),
+                    style: TextStyle(color: AppTheme.textMuted),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -124,7 +120,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                     icon: const Icon(Icons.library_music),
                     label: const Text('رفتن به کتابخانه'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF8B5CF6),
+                      backgroundColor: AppTheme.accent,
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -140,9 +136,9 @@ class _PlayerScreenState extends State<PlayerScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  _dominantColor.withOpacity(0.35),
-                  const Color(0xFF070B14),
-                  const Color(0xFF111827),
+                  _dominantColor.withOpacity(AppTheme.isDark ? 0.35 : 0.18),
+                  AppTheme.background,
+                  AppTheme.surface,
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -152,10 +148,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               child: Column(
                 children: [
                   _buildHeader(currentTrack),
-                  Expanded(
-                    flex: 4,
-                    child: _buildDisc(currentTrack),
-                  ),
+                  Expanded(flex: 4, child: _buildDisc(currentTrack)),
                   Expanded(
                     flex: 5,
                     child: Padding(
@@ -179,11 +172,8 @@ class _PlayerScreenState extends State<PlayerScreen>
         children: [
           IconButton(
             onPressed: widget.onOpenLibrary,
-            icon: const Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.white,
-              size: 32,
-            ),
+            icon: Icon(Icons.keyboard_arrow_down,
+                color: AppTheme.iconActive, size: 32),
           ),
           const Spacer(),
           IconButton(
@@ -196,17 +186,14 @@ class _PlayerScreenState extends State<PlayerScreen>
                   ? Icons.favorite
                   : Icons.favorite_border,
               color: widget.storageService.isFavorite(track.id)
-                  ? const Color(0xFF8B5CF6)
-                  : Colors.white70,
+                  ? AppTheme.accent
+                  : AppTheme.textSecondary,
               size: 28,
             ),
           ),
           IconButton(
             onPressed: widget.onOpenSettings,
-            icon: const Icon(
-              Icons.more_vert,
-              color: Colors.white70,
-            ),
+            icon: Icon(Icons.more_vert, color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -249,24 +236,18 @@ class _PlayerScreenState extends State<PlayerScreen>
                           track.artworkUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFF111827),
-                            child: const Center(
-                              child: Icon(
-                                Icons.music_note_rounded,
-                                size: 64,
-                                color: Colors.white54,
-                              ),
+                            color: AppTheme.surface,
+                            child: Center(
+                              child: Icon(Icons.music_note_rounded,
+                                  size: 64, color: AppTheme.textMuted),
                             ),
                           ),
                         )
                       : Container(
-                          color: const Color(0xFF111827),
-                          child: const Center(
-                            child: Icon(
-                              Icons.music_note_rounded,
-                              size: 64,
-                              color: Colors.white54,
-                            ),
+                          color: AppTheme.surface,
+                          child: Center(
+                            child: Icon(Icons.music_note_rounded,
+                                size: 64, color: AppTheme.textMuted),
                           ),
                         ),
                   Center(
@@ -274,10 +255,10 @@ class _PlayerScreenState extends State<PlayerScreen>
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF070B14),
+                        color: AppTheme.background,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white24,
+                          color: AppTheme.cardBorder,
                           width: 6,
                         ),
                       ),
@@ -319,8 +300,8 @@ class _PlayerScreenState extends State<PlayerScreen>
                     Text(
                       track.title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.textPrimary,
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
                       ),
@@ -329,8 +310,8 @@ class _PlayerScreenState extends State<PlayerScreen>
                     Text(
                       track.artist,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
                         fontSize: 15,
                       ),
                     ),
@@ -340,8 +321,8 @@ class _PlayerScreenState extends State<PlayerScreen>
                       min: 0,
                       max: sliderMax,
                       activeColor: _dominantColor,
-                      inactiveColor: Colors.white12,
-                      thumbColor: Colors.white,
+                      inactiveColor: AppTheme.sliderInactive,
+                      thumbColor: AppTheme.iconActive,
                       onChanged: (value) {
                         widget.playerService
                             .seek(Duration(milliseconds: value.toInt()));
@@ -354,17 +335,13 @@ class _PlayerScreenState extends State<PlayerScreen>
                         children: [
                           Text(
                             _formatDuration(position),
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(
+                                color: AppTheme.textMuted, fontSize: 12),
                           ),
                           Text(
                             _formatDuration(duration),
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(
+                                color: AppTheme.textMuted, fontSize: 12),
                           ),
                         ],
                       ),
@@ -392,18 +369,13 @@ class _PlayerScreenState extends State<PlayerScreen>
       children: [
         IconButton(
           onPressed: widget.playerService.cycleLoop,
-          icon: Icon(
-            loopIcon,
-            color: loopActive ? Colors.white : Colors.white38,
-          ),
+          icon: Icon(loopIcon,
+              color: loopActive ? AppTheme.iconActive : AppTheme.iconInactive),
         ),
         IconButton(
           onPressed: widget.playerService.skipToPrevious,
-          icon: const Icon(
-            Icons.skip_previous,
-            size: 44,
-            color: Colors.white,
-          ),
+          icon: Icon(Icons.skip_previous,
+              size: 44, color: AppTheme.iconActive),
         ),
         GestureDetector(
           onTap: playing
@@ -447,19 +419,16 @@ class _PlayerScreenState extends State<PlayerScreen>
         ),
         IconButton(
           onPressed: widget.playerService.skipToNext,
-          icon: const Icon(
-            Icons.skip_next,
-            size: 44,
-            color: Colors.white,
-          ),
+          icon:
+              Icon(Icons.skip_next, size: 44, color: AppTheme.iconActive),
         ),
         IconButton(
           onPressed: widget.playerService.toggleShuffle,
           icon: Icon(
             Icons.shuffle,
             color: widget.playerService.shuffleEnabled
-                ? Colors.white
-                : Colors.white38,
+                ? AppTheme.iconActive
+                : AppTheme.iconInactive,
           ),
         ),
       ],
