@@ -14,90 +14,9 @@
       background-color: #070B14;
       overflow: hidden;
     }
-
-    #titlebar {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 36px;
-      z-index: 9999;
-      align-items: center;
-      justify-content: space-between;
-      padding-left: 12px;
-      background: #070B14;
-      color: #ffffff;
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      font-size: 13px;
-      -webkit-app-region: drag;
-      user-select: none;
-    }
-
-    body.has-titlebar #titlebar { display: flex; }
-
-    body.has-titlebar flt-glass-pane {
-      top: 36px !important;
-      height: calc(100% - 36px) !important;
-    }
-
-    #titlebar-buttons {
-      display: flex;
-      -webkit-app-region: no-drag;
-    }
-
-    .tb-btn {
-      width: 44px;
-      height: 36px;
-      border: none;
-      background: transparent;
-      color: inherit;
-      font-size: 14px;
-      cursor: pointer;
-      outline: none;
-    }
-
-    .tb-btn:hover { background: rgba(128, 128, 128, 0.25); }
-    .tb-close:hover { background: #E81123; color: #fff; }
   </style>
 </head>
 <body>
-  <div id="titlebar">
-    <div id="titlebar-text">SonicWave</div>
-    <div id="titlebar-buttons">
-      <button class="tb-btn" id="tb-min">&#x2013;</button>
-      <button class="tb-btn" id="tb-max">&#x25A1;</button>
-      <button class="tb-btn tb-close" id="tb-close">&#x2715;</button>
-    </div>
-  </div>
-
   <script src="flutter_bootstrap.js" async></script>
-
-  <script>
-    (function () {
-      window.setTitlebarColor = function (bg, fg) {
-        var tb = document.getElementById('titlebar');
-        if (tb) {
-          tb.style.background = bg;
-          tb.style.color = fg;
-        }
-      };
-
-      function init() {
-        var b = window.sonicwave;
-        if (!b) return;
-
-        document.body.classList.add('has-titlebar');
-
-        document.getElementById('tb-min').addEventListener('click', function () { b.minimize(); });
-        document.getElementById('tb-max').addEventListener('click', function () { b.maximize(); });
-        document.getElementById('tb-close').addEventListener('click', function () { b.closeWindow(); });
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-      }
-    })();
-  </script>
 </body>
 </html>
