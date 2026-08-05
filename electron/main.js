@@ -39,10 +39,7 @@ function safePath(requestPath) {
   const resolvedWeb = path.resolve(WEB_DIR);
   const fullPath = path.resolve(path.join(WEB_DIR, normalized));
 
-  if (!fullPath.startsWith(resolvedWeb)) {
-    return null;
-  }
-
+  if (!fullPath.startsWith(resolvedWeb)) return null;
   return fullPath;
 }
 
@@ -69,8 +66,22 @@ function collectAudioFiles(dir) {
   return results;
 }
 
-// ---------- IPC: انتخاب پوشه و اسکن فایل‌ها (نیتیو ویندوز) ----------
+// ---------- پنجره ----------
+ipcMain.handle('win-minimize', () => {
+  if (mainWindow) mainWindow.minimize();
+});
 
+ipcMain.handle('win-maximize', () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
+  else mainWindow.maximize();
+});
+
+ipcMain.handle('win-close', () => {
+  if (mainWindow) mainWindow.close();
+});
+
+// ---------- فایل‌ها ----------
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog({
     title: 'پوشه موزیک خود را انتخاب کنید',
@@ -86,8 +97,34 @@ ipcMain.handle('list-audio-files', async (event, folderPath) => {
   return collectAudioFiles(path.resolve(folderPath));
 });
 
-// ---------- سرور محلی ----------
+ipcMain.handle('file-rename', async (event, oldPath, newPath) => {
+  try {
+    fs.renameSync(oldPath, newPath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+});
 
+ipcMain.handle('file-delete', async (event, filePath) => {
+  try {
+    fs.unlinkSync(filePath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+});
+
+ipcMain.handle('file-reveal', async (event, filePath) => {
+  try {
+    shell.showItemInFolder(filePath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+});
+
+// ---------- سرور محلی ----------
 function createServer() {
   return http.createServer((req, res) => {
     let parsed;
@@ -100,7 +137,6 @@ function createServer() {
 
     const urlPath = parsed ? parsed.pathname : req.url;
 
-    // استریم فایل‌های صوتی لوکال (برای پخش موزیک‌های کامپیوتر)
     if (urlPath === '/localfile') {
       const q = parsed ? parsed.searchParams.get('path') : null;
 
@@ -137,7 +173,6 @@ function createServer() {
       return;
     }
 
-    // سرو کردن فایل‌های خود اپ
     let assetPath = urlPath;
     if (assetPath === '/') assetPath = '/index.html';
 
@@ -174,8 +209,8 @@ function createWindow(port) {
     height: 900,
     minWidth: 380,
     minHeight: 700,
+    frame: false,
     backgroundColor: '#070B14',
-    autoHideMenuBar: true,
     title: 'SonicWave',
     webPreferences: {
       contextIsolation: true,
