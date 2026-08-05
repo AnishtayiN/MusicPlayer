@@ -6,7 +6,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
-  /// ⚠️ باید با نام کاربری و ریپوی گیت‌هاب تو یکی باشد
   static const String githubOwner = 'AnishtayiN';
   static const String githubRepo = 'MusicPlayer';
 
