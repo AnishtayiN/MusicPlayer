@@ -1,9 +1,11 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, dialog, ipcMain } = require('electron');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
 const WEB_DIR = path.join(__dirname, '..', 'build', 'web');
+
+const AUDIO_EXTS = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'];
 
 let server;
 let mainWindow;
@@ -21,6 +23,11 @@ const mimeTypes = {
   '.ico': 'image/x-icon',
   '.mp3': 'audio/mpeg',
   '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.flac': 'audio/flac',
+  '.aac': 'audio/aac',
+  '.wma': 'audio/x-ms-wma',
   '.wasm': 'application/wasm',
 };
 
@@ -39,21 +46,102 @@ function safePath(requestPath) {
   return fullPath;
 }
 
+function collectAudioFiles(dir) {
+  const results = [];
+  let entries;
+
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch (_) {
+    return results;
+  }
+
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      results.push(...collectAudioFiles(full));
+    } else if (AUDIO_EXTS.includes(path.extname(entry.name).toLowerCase())) {
+      results.push(full);
+    }
+  }
+
+  return results;
+}
+
+// ---------- IPC: انتخاب پوشه و اسکن فایل‌ها (نیتیو ویندوز) ----------
+
+ipcMain.handle('select-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'پوشه موزیک خود را انتخاب کنید',
+    properties: ['openDirectory'],
+  });
+
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.handle('list-audio-files', async (event, folderPath) => {
+  if (!folderPath || typeof folderPath !== 'string') return [];
+  return collectAudioFiles(path.resolve(folderPath));
+});
+
+// ---------- سرور محلی ----------
+
 function createServer() {
   return http.createServer((req, res) => {
-    let urlPath;
+    let parsed;
 
     try {
-      urlPath = new URL(req.url, 'http://127.0.0.1').pathname;
+      parsed = new URL(req.url, 'http://127.0.0.1');
     } catch (_) {
-      urlPath = req.url;
+      parsed = null;
     }
 
-    if (urlPath === '/') {
-      urlPath = '/index.html';
+    const urlPath = parsed ? parsed.pathname : req.url;
+
+    // استریم فایل‌های صوتی لوکال (برای پخش موزیک‌های کامپیوتر)
+    if (urlPath === '/localfile') {
+      const q = parsed ? parsed.searchParams.get('path') : null;
+
+      if (!q) {
+        res.writeHead(400);
+        res.end('Missing path');
+        return;
+      }
+
+      let filePath;
+      try {
+        filePath = path.resolve(decodeURIComponent(q));
+      } catch (_) {
+        filePath = null;
+      }
+
+      const ext = filePath ? path.extname(filePath).toLowerCase() : '';
+
+      if (!filePath || !AUDIO_EXTS.includes(ext) || !fs.existsSync(filePath)) {
+        res.writeHead(404);
+        res.end('Not found');
+        return;
+      }
+
+      const stat = fs.statSync(filePath);
+
+      res.writeHead(200, {
+        'Content-Type': mimeTypes[ext] || 'audio/mpeg',
+        'Content-Length': stat.size,
+        'Cache-Control': 'no-store',
+      });
+
+      fs.createReadStream(filePath).pipe(res);
+      return;
     }
 
-    const filePath = safePath(urlPath);
+    // سرو کردن فایل‌های خود اپ
+    let assetPath = urlPath;
+    if (assetPath === '/') assetPath = '/index.html';
+
+    const filePath = safePath(assetPath);
 
     if (!filePath) {
       res.writeHead(403);
@@ -93,6 +181,7 @@ function createWindow(port) {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
 
