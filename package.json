@@ -23,12 +23,7 @@
       "package.json"
     ],
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["ia32"]
-        }
-      ]
+      "target": [{ "target": "nsis", "arch": ["ia32"] }]
     },
     "nsis": {
       "oneClick": false,
@@ -43,6 +38,9 @@
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "artifactName": "SonicWaveSetup.exe"
     }
+  },
+  "dependencies": {
+    "music-metadata": "^7.3.0"
   },
   "devDependencies": {
     "electron": "22.3.27",
