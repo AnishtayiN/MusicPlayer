@@ -72,4 +72,18 @@ class StorageService {
   Future<void> setDarkTheme(bool value) async {
     await _settingsBoxRef.put('theme_dark', value);
   }
+
+  String getDarkAccent() =>
+      _settingsBoxRef.get('accent_dark', defaultValue: 'purple');
+
+  Future<void> setDarkAccent(String value) async {
+    await _settingsBoxRef.put('accent_dark', value);
+  }
+
+  String getLightAccent() =>
+      _settingsBoxRef.get('accent_light', defaultValue: 'blue');
+
+  Future<void> setLightAccent(String value) async {
+    await _settingsBoxRef.put('accent_light', value);
+  }
 }
