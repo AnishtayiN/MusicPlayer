@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../services/storage_service.dart';
 import '../services/update_service.dart';
 
 class SettingsScreen extends StatefulWidget {
+  final StorageService storageService;
+  final VoidCallback onThemeUpdated;
   final VoidCallback? onCheckUpdate;
-  final bool isDark;
-  final ValueChanged<bool>? onThemeChanged;
 
   const SettingsScreen({
     super.key,
+    required this.storageService,
+    required this.onThemeUpdated,
     this.onCheckUpdate,
-    required this.isDark,
-    this.onThemeChanged,
   });
 
   @override
@@ -41,8 +42,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _setDark(bool value) async {
+    await widget.storageService.setDarkTheme(value);
+    widget.onThemeUpdated();
+    setState(() {});
+  }
+
+  Future<void> _setDarkAccent(String id) async {
+    await widget.storageService.setDarkAccent(id);
+    widget.onThemeUpdated();
+    setState(() {});
+  }
+
+  Future<void> _setLightAccent(String id) async {
+    await widget.storageService.setLightAccent(id);
+    widget.onThemeUpdated();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = widget.storageService.isDarkTheme();
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -69,14 +90,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Container(
                       width: 44,
                       height: 44,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [AppTheme.accent, AppTheme.accent2],
                         ),
                       ),
                       child: Icon(
-                        widget.isDark ? Icons.dark_mode : Icons.light_mode,
+                        isDark ? Icons.dark_mode : Icons.light_mode,
                         color: Colors.white,
                         size: 24,
                       ),
@@ -87,7 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'تم تیره',
+                            'تم تیره (شب)',
                             style: TextStyle(
                               color: AppTheme.textPrimary,
                               fontSize: 16,
@@ -96,7 +117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.isDark ? 'فعال (شب)' : 'غیرفعال (روز)',
+                            isDark ? 'فعال' : 'غیرفعال (روز)',
                             style: TextStyle(
                               color: AppTheme.textMuted,
                               fontSize: 14,
@@ -106,12 +127,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     Switch(
-                      value: widget.isDark,
+                      value: isDark,
                       activeColor: AppTheme.accent,
-                      onChanged: (v) => widget.onThemeChanged?.call(v),
+                      onChanged: _setDark,
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 16),
+              _buildAccentCard(
+                title: 'رنگ تم شب',
+                hint: 'وقتی تم تاریک فعال است',
+                currentId: widget.storageService.getDarkAccent(),
+                onPick: _setDarkAccent,
+              ),
+              const SizedBox(height: 16),
+              _buildAccentCard(
+                title: 'رنگ تم روز',
+                hint: 'وقتی تم روشن فعال است',
+                currentId: widget.storageService.getLightAccent(),
+                onPick: _setLightAccent,
               ),
             ],
           ),
@@ -174,6 +209,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildAccentCard({
+    required String title,
+    required String hint,
+    required String currentId,
+    required Function(String) onPick,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceSoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '($hint)',
+                style: TextStyle(color: AppTheme.textFaint, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 14,
+            runSpacing: 14,
+            children: AppTheme.accents.map((a) {
+              final selected = a.id == currentId;
+              return GestureDetector(
+                onTap: () => onPick(a.id),
+                child: Tooltip(
+                  message: a.name,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [a.primary, a.secondary],
+                      ),
+                      border: selected
+                          ? Border.all(color: AppTheme.textPrimary, width: 3)
+                          : null,
+                      boxShadow: selected
+                          ? [
+                              BoxShadow(
+                                color: a.primary.withOpacity(0.5),
+                                blurRadius: 14,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: selected
+                        ? const Icon(Icons.check, color: Colors.white)
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSection({required String title, required List<Widget> children}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             width: 44,
             height: 44,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [AppTheme.accent, AppTheme.accent2],
@@ -266,7 +378,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [AppTheme.accent, AppTheme.accent2],
