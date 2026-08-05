@@ -66,21 +66,6 @@ function collectAudioFiles(dir) {
   return results;
 }
 
-// ---------- پنجره ----------
-ipcMain.handle('win-minimize', () => {
-  if (mainWindow) mainWindow.minimize();
-});
-
-ipcMain.handle('win-maximize', () => {
-  if (!mainWindow) return;
-  if (mainWindow.isMaximized()) mainWindow.unmaximize();
-  else mainWindow.maximize();
-});
-
-ipcMain.handle('win-close', () => {
-  if (mainWindow) mainWindow.close();
-});
-
 // ---------- فایل‌ها ----------
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog({
@@ -209,7 +194,6 @@ function createWindow(port) {
     height: 900,
     minWidth: 380,
     minHeight: 700,
-    frame: false,
     backgroundColor: '#070B14',
     title: 'SonicWave',
     webPreferences: {
