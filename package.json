@@ -7,13 +7,15 @@
   "private": true,
   "main": "electron/main.js",
   "scripts": {
-    "build:win": "electron-builder --win --publish never"
+    "generate:assets": "node scripts/generate-assets.js",
+    "build:win": "node scripts/generate-assets.js && electron-builder --win --publish never"
   },
   "build": {
     "appId": "com.example.sonicwave",
     "productName": "SonicWave",
     "directories": {
-      "output": "dist_electron"
+      "output": "dist_electron",
+      "buildResources": "build"
     },
     "files": [
       "electron/**/*",
@@ -30,7 +32,15 @@
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
+      "buildUniversalInstaller": false,
       "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SonicWave",
+      "deleteAppDataOnUninstall": false,
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "artifactName": "SonicWaveSetup.exe"
     }
   },
