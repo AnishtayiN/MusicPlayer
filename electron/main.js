@@ -43,7 +43,6 @@ function sendMedia(key) {
   BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('media-key', key));
 }
 
-// ---------- IPC ----------
 ipcMain.handle('select-folder', async () => {
   const r = await dialog.showOpenDialog({ title: 'پوشه موزیک', properties: ['openDirectory'] });
   return r.canceled || r.filePaths.length === 0 ? null : r.filePaths[0];
@@ -92,7 +91,6 @@ ipcMain.handle('get-music-dir', async () => {
   return fs.existsSync(dir) ? dir : null;
 });
 
-// ---------- سرور ----------
 function createServer() {
   return http.createServer((req, res) => {
     let parsed;
@@ -173,7 +171,6 @@ app.whenReady().then(async () => {
   const port = server.address().port;
   createWindow(port);
 
-  // Media Keys ویندوز
   globalShortcut.register('MediaPlayPause', () => sendMedia('playpause'));
   globalShortcut.register('MediaNextTrack', () => sendMedia('next'));
   globalShortcut.register('MediaPreviousTrack', () => sendMedia('prev'));
