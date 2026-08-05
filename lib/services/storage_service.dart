@@ -2,21 +2,16 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/track.dart';
 
 class StorageService {
-  static const String _favoritesBox = 'favorites';
-  static const String _playlistsBox = 'playlists';
-  static const String _settingsBox = 'settings';
-
   late Box<Track> _favoritesBoxRef;
-  late Box<List> _playlistsBoxRef;
+  late Box<Track> _historyBoxRef;
   late Box<dynamic> _settingsBoxRef;
 
   Future<void> init() async {
     await Hive.initFlutter();
     Hive.registerAdapter(TrackAdapter());
-
-    _favoritesBoxRef = await Hive.openBox<Track>(_favoritesBox);
-    _playlistsBoxRef = await Hive.openBox<List>(_playlistsBox);
-    _settingsBoxRef = await Hive.openBox(_settingsBox);
+    _favoritesBoxRef = await Hive.openBox<Track>('favorites');
+    _historyBoxRef = await Hive.openBox<Track>('history');
+    _settingsBoxRef = await Hive.openBox('settings');
   }
 
   List<Track> getFavorites() => _favoritesBoxRef.values.toList();
@@ -31,59 +26,46 @@ class StorageService {
 
   bool isFavorite(String trackId) => _favoritesBoxRef.containsKey(trackId);
 
-  List<Track> getPlaylist(String name) {
-    final data = _playlistsBoxRef.get(name);
-    if (data == null) return [];
-    return data.cast<Track>();
-  }
+  List<Track> getHistory() => _historyBoxRef.values.toList().reversed.toList();
 
-  Future<void> savePlaylist(String name, List<Track> tracks) async {
-    await _playlistsBoxRef.put(name, tracks);
-  }
-
-  Future<void> deletePlaylist(String name) async {
-    await _playlistsBoxRef.delete(name);
-  }
-
-  List<String> getPlaylistNames() =>
-      _playlistsBoxRef.keys.cast<String>().toList();
-
-  String? getLastVersion() => _settingsBoxRef.get('lastVersion');
-
-  Future<void> setLastVersion(String version) async {
-    await _settingsBoxRef.put('lastVersion', version);
-  }
-
-  bool getSkipUpdate(String version) =>
-      _settingsBoxRef.get('skip_$version', defaultValue: false);
-
-  Future<void> setSkipUpdate(String version, bool skip) async {
-    await _settingsBoxRef.put('skip_$version', skip);
-  }
+  Future<void> addHistory(Track t) async => _historyBoxRef.put(t.id, t);
 
   String? getCustomFolderPath() => _settingsBoxRef.get('custom_folder_path');
-
-  Future<void> setCustomFolderPath(String? path) async {
-    await _settingsBoxRef.put('custom_folder_path', path);
-  }
+  Future<void> setCustomFolderPath(String? p) async =>
+      _settingsBoxRef.put('custom_folder_path', p);
 
   bool isDarkTheme() => _settingsBoxRef.get('theme_dark', defaultValue: true);
-
-  Future<void> setDarkTheme(bool value) async {
-    await _settingsBoxRef.put('theme_dark', value);
-  }
+  Future<void> setDarkTheme(bool v) async => _settingsBoxRef.put('theme_dark', v);
 
   String getDarkAccent() =>
       _settingsBoxRef.get('accent_dark', defaultValue: 'purple');
-
-  Future<void> setDarkAccent(String value) async {
-    await _settingsBoxRef.put('accent_dark', value);
-  }
+  Future<void> setDarkAccent(String v) async =>
+      _settingsBoxRef.put('accent_dark', v);
 
   String getLightAccent() =>
       _settingsBoxRef.get('accent_light', defaultValue: 'blue');
+  Future<void> setLightAccent(String v) async =>
+      _settingsBoxRef.put('accent_light', v);
 
-  Future<void> setLightAccent(String value) async {
-    await _settingsBoxRef.put('accent_light', value);
+  double getVolume() => (_settingsBoxRef.get('volume', defaultValue: 1.0) as num).toDouble();
+  Future<void> setVolume(double v) async => _settingsBoxRef.put('volume', v);
+
+  double getSpeed() => (_settingsBoxRef.get('speed', defaultValue: 1.0) as num).toDouble();
+  Future<void> setSpeed(double v) async => _settingsBoxRef.put('speed', v);
+
+  String? getLastTrackId() => _settingsBoxRef.get('last_track_id');
+  int getLastPositionMs() => _settingsBoxRef.get('last_position_ms', defaultValue: 0);
+  Future<void> setLastSession(String id, int ms) async {
+    await _settingsBoxRef.put('last_track_id', id);
+    await _settingsBoxRef.put('last_position_ms', ms);
   }
+
+  String? getSavedLyrics(String id) => _settingsBoxRef.get('lyrics_$id');
+  Future<void> setSavedLyrics(String id, String text) async =>
+      _settingsBoxRef.put('lyrics_$id', text);
+
+  bool getSkipUpdate(String v) =>
+      _settingsBoxRef.get('skip_$v', defaultValue: false);
+  Future<void> setSkipUpdate(String v, bool s) async =>
+      _settingsBoxRef.put('skip_$v', s);
 }
