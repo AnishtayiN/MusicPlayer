@@ -20,54 +20,14 @@ class AppTheme {
   static String lightAccentId = 'blue';
 
   static const List<AppAccent> accents = [
-    AppAccent(
-      id: 'purple',
-      name: 'بنفش',
-      primary: Color(0xFF8B5CF6),
-      secondary: Color(0xFF06B6D4),
-    ),
-    AppAccent(
-      id: 'blue',
-      name: 'آبی',
-      primary: Color(0xFF3B82F6),
-      secondary: Color(0xFF22D3EE),
-    ),
-    AppAccent(
-      id: 'pink',
-      name: 'صورتی',
-      primary: Color(0xFFEC4899),
-      secondary: Color(0xFF8B5CF6),
-    ),
-    AppAccent(
-      id: 'red',
-      name: 'قرمز',
-      primary: Color(0xFFEF4444),
-      secondary: Color(0xFFF97316),
-    ),
-    AppAccent(
-      id: 'orange',
-      name: 'نارنجی',
-      primary: Color(0xFFF97316),
-      secondary: Color(0xFFFACC15),
-    ),
-    AppAccent(
-      id: 'gold',
-      name: 'طلایی',
-      primary: Color(0xFFF59E0B),
-      secondary: Color(0xFFEF4444),
-    ),
-    AppAccent(
-      id: 'green',
-      name: 'سبز',
-      primary: Color(0xFF10B981),
-      secondary: Color(0xFF84CC16),
-    ),
-    AppAccent(
-      id: 'teal',
-      name: 'فیروزه‌ای',
-      primary: Color(0xFF14B8A6),
-      secondary: Color(0xFF0EA5E9),
-    ),
+    AppAccent(id: 'purple', name: 'بنفش', primary: Color(0xFF8B5CF6), secondary: Color(0xFF06B6D4)),
+    AppAccent(id: 'blue', name: 'آبی', primary: Color(0xFF3B82F6), secondary: Color(0xFF22D3EE)),
+    AppAccent(id: 'pink', name: 'صورتی', primary: Color(0xFFEC4899), secondary: Color(0xFF8B5CF6)),
+    AppAccent(id: 'red', name: 'قرمز', primary: Color(0xFFEF4444), secondary: Color(0xFFF97316)),
+    AppAccent(id: 'orange', name: 'نارنجی', primary: Color(0xFFF97316), secondary: Color(0xFFFACC15)),
+    AppAccent(id: 'gold', name: 'طلایی', primary: Color(0xFFF59E0B), secondary: Color(0xFFEF4444)),
+    AppAccent(id: 'green', name: 'سبز', primary: Color(0xFF10B981), secondary: Color(0xFF84CC16)),
+    AppAccent(id: 'teal', name: 'فیروزه‌ای', primary: Color(0xFF14B8A6), secondary: Color(0xFF0EA5E9)),
   ];
 
   static AppAccent _byId(String id) =>
@@ -79,6 +39,9 @@ class AppTheme {
 
   static Color get accent => current.primary;
   static Color get accent2 => current.secondary;
+
+  static String toHex(Color c) =>
+      '#${(c.value & 0x00FFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
   static ThemeData light() => ThemeData(
         useMaterial3: true,
