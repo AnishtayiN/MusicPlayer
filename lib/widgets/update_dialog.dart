@@ -27,7 +27,7 @@ class UpdateDialog extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [AppTheme.accent, AppTheme.accent2],
@@ -54,7 +54,7 @@ class UpdateDialog extends StatelessWidget {
         children: [
           Text(
             'نسخه ${updateInfo.version}',
-            style: const TextStyle(
+            style: TextStyle(
               color: AppTheme.accent,
               fontSize: 16,
               fontWeight: FontWeight.w600,
