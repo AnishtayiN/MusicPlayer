@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+
 import '../models/track.dart';
 
 class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
@@ -36,12 +39,9 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     });
 
     _stateSub = _player.playerStateStream.listen((state) {
-      final playing = state.playing;
-      final processingState = state.processingState;
-
       playbackState.add(playbackState.value.copyWith(
-        playing: playing,
-        processingState: _mapProcessingState(processingState),
+        playing: state.playing,
+        processingState: _mapProcessingState(state.processingState),
       ));
     });
 
@@ -82,7 +82,7 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     _tracks = tracks;
 
     final audioSources = tracks.map((track) {
-      if (track.isLocal && track.localPath != null) {
+      if (track.isLocal && track.localPath != null && !kIsWeb) {
         return AudioSource.file(track.localPath!);
       } else {
         return AudioSource.uri(Uri.parse(track.url));
@@ -98,7 +98,6 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     queue.add(tracks.map(_tracksToMediaItem).toList());
   }
 
-  /// قطع کامل پخش و حذف آهنگ فعلی (برای دکمه ضربدر Mini Player)
   Future<void> stopAndClear() async {
     await _player.stop();
     _tracks = [];
@@ -119,9 +118,7 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
   @override
   Future<void> skipToNext() async {
     if (_tracks.isEmpty) return;
-
-    final nextIndex = _nextIndex();
-    await _player.seek(Duration.zero, index: nextIndex);
+    await _player.seek(Duration.zero, index: _nextIndex());
     await play();
   }
 
@@ -134,15 +131,13 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
       return;
     }
 
-    final prevIndex = _previousIndex();
-    await _player.seek(Duration.zero, index: prevIndex);
+    await _player.seek(Duration.zero, index: _previousIndex());
     await play();
   }
 
   @override
   Future<void> skipToQueueItem(int index) async {
     if (index < 0 || index >= _tracks.length) return;
-
     await _player.seek(Duration.zero, index: index);
     await play();
   }
@@ -191,7 +186,7 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
   LoopMode get loopMode => _loopMode;
   int get currentIndex => _currentIndex;
   Track? get currentTrack =>
-      _currentIndex < _tracks.length && _tracks.isNotEmpty
+      _tracks.isNotEmpty && _currentIndex < _tracks.length
           ? _tracks[_currentIndex]
           : null;
   AudioPlayer get player => _player;
