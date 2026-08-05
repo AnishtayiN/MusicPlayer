@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/track.dart';
+import '../theme/app_theme.dart';
 
 class TrackTile extends StatelessWidget {
   final Track track;
@@ -28,15 +30,15 @@ class TrackTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             gradient: isCurrentTrack
-                ? const LinearGradient(
+                ? LinearGradient(
                     colors: [
-                      Color.fromRGBO(139, 92, 246, 0.30),
-                      Color.fromRGBO(6, 182, 212, 0.16),
+                      AppTheme.accent.withOpacity(AppTheme.isDark ? 0.30 : 0.15),
+                      AppTheme.accent2.withOpacity(AppTheme.isDark ? 0.16 : 0.08),
                     ],
                   )
                 : null,
             border: isCurrentTrack
-                ? Border.all(color: const Color.fromRGBO(139, 92, 246, 0.55))
+                ? Border.all(color: AppTheme.accent.withOpacity(0.55))
                 : null,
           ),
           child: Row(
@@ -46,7 +48,7 @@ class TrackTile extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: const Color(0xFF1E1B4B),
+                  color: AppTheme.placeholder,
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -54,18 +56,14 @@ class TrackTile extends StatelessWidget {
                       ? Image.network(
                           track.artworkUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Center(
-                            child: Icon(
-                              Icons.music_note,
-                              color: Colors.white54,
-                            ),
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Icon(Icons.music_note,
+                                color: AppTheme.textMuted),
                           ),
                         )
-                      : const Center(
-                          child: Icon(
-                            Icons.music_note,
-                            color: Colors.white54,
-                          ),
+                      : Center(
+                          child: Icon(Icons.music_note,
+                              color: AppTheme.textMuted),
                         ),
                 ),
               ),
@@ -79,7 +77,7 @@ class TrackTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontWeight: isCurrentTrack
                             ? FontWeight.w700
                             : FontWeight.w500,
@@ -90,8 +88,8 @@ class TrackTile extends StatelessWidget {
                       track.artist,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white54,
+                      style: TextStyle(
+                        color: AppTheme.textMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -99,21 +97,16 @@ class TrackTile extends StatelessWidget {
                 ),
               ),
               if (isCurrentTrack)
-                const Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: Icon(
-                    Icons.equalizer,
-                    color: Colors.white70,
-                    size: 20,
-                  ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Icon(Icons.equalizer,
+                      color: AppTheme.textSecondary, size: 20),
                 ),
               IconButton(
                 onPressed: onFavoriteTap,
                 icon: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite
-                      ? const Color(0xFF8B5CF6)
-                      : Colors.white38,
+                  color: isFavorite ? AppTheme.accent : AppTheme.iconInactive,
                   size: 22,
                 ),
               ),
