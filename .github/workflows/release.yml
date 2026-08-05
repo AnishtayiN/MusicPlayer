@@ -139,7 +139,6 @@ jobs:
           VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
           VERSION_NO_V="${VERSION_NO_V#v}"
           sed -i "s/\"version\": \"[0-9.]*\"/\"version\": \"${VERSION_NO_V}\"/" package.json
-          cat package.json | grep version
 
       - name: Get Flutter dependencies
         run: flutter pub get
@@ -168,7 +167,7 @@ jobs:
         run: npm install
 
       - name: Build Windows installer
-        run: npx electron-builder --win --publish never
+        run: npm run build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
