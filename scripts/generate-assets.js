@@ -8,13 +8,11 @@ function writeBmp(file, width, height, colorFn) {
 
   const buf = Buffer.alloc(fileSize);
 
-  // BITMAPFILEHEADER
   buf.write('BM', 0);
   buf.writeUInt32LE(fileSize, 2);
   buf.writeUInt32LE(0, 6);
   buf.writeUInt32LE(54, 10);
 
-  // BITMAPINFOHEADER
   buf.writeUInt32LE(40, 14);
   buf.writeInt32LE(width, 18);
   buf.writeInt32LE(height, 22);
@@ -41,7 +39,6 @@ function writeBmp(file, width, height, colorFn) {
   fs.writeFileSync(file, buf);
 }
 
-// گرادیان عمودی بنفش -> فیروزه‌ای
 const top = [139, 92, 246];
 const bottom = [6, 182, 212];
 
