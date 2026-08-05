@@ -68,4 +68,12 @@ class StorageService {
   Future<void> setSkipUpdate(String version, bool skip) async {
     await _settingsBoxRef.put('skip_$version', skip);
   }
+
+  String? getCustomFolderPath() {
+    return _settingsBoxRef.get('custom_folder_path');
+  }
+
+  Future<void> setCustomFolderPath(String? path) async {
+    await _settingsBoxRef.put('custom_folder_path', path);
+  }
 }
