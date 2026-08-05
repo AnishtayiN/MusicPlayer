@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 import '../models/track.dart';
 import '../theme/app_theme.dart';
@@ -21,6 +23,26 @@ class TrackTile extends StatelessWidget {
     this.onMenuAction,
   });
 
+  Widget _art() {
+    if (track.artworkId != null && !kIsWeb) {
+      return ArtworkWidget(
+        key: Key('art_${track.artworkId}'),
+        type: ArtworkType.AUDIO,
+        id: track.artworkId!,
+        size: 48,
+        quality: 100,
+        artworkBorder: BorderRadius.circular(8),
+        errorWidget: Icon(Icons.music_note, color: AppTheme.textMuted),
+      );
+    }
+    if (track.artworkUrl != null) {
+      return Image.network(track.artworkUrl!, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Icon(Icons.music_note, color: AppTheme.textMuted));
+    }
+    return Icon(Icons.music_note, color: AppTheme.textMuted);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -32,12 +54,10 @@ class TrackTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             gradient: isCurrentTrack
-                ? LinearGradient(
-                    colors: [
-                      AppTheme.accent.withOpacity(AppTheme.isDark ? 0.30 : 0.15),
-                      AppTheme.accent2.withOpacity(AppTheme.isDark ? 0.16 : 0.08),
-                    ],
-                  )
+                ? LinearGradient(colors: [
+                    AppTheme.accent.withOpacity(AppTheme.isDark ? 0.30 : 0.15),
+                    AppTheme.accent2.withOpacity(AppTheme.isDark ? 0.16 : 0.08),
+                  ])
                 : null,
             border: isCurrentTrack
                 ? Border.all(color: AppTheme.accent.withOpacity(0.55))
@@ -45,28 +65,12 @@ class TrackTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 48, height: 48,
                   color: AppTheme.placeholder,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: track.artworkUrl != null
-                      ? Image.network(
-                          track.artworkUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Center(
-                            child: Icon(Icons.music_note,
-                                color: AppTheme.textMuted),
-                          ),
-                        )
-                      : Center(
-                          child: Icon(Icons.music_note,
-                              color: AppTheme.textMuted),
-                        ),
+                  child: Center(child: _art()),
                 ),
               ),
               const SizedBox(width: 12),
@@ -74,24 +78,43 @@ class TrackTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      track.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontWeight: isCurrentTrack
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            track.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontWeight: isCurrentTrack
+                                  ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (track.format.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              track.format,
+                              style: TextStyle(
+                                  color: AppTheme.accent, fontSize: 9,
+                                  fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      track.artist,
+                      track.album ?? track.artist,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:
-                          TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                      style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -112,47 +135,27 @@ class TrackTile extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 padding: EdgeInsets.zero,
-                icon: Icon(Icons.more_vert,
-                    color: AppTheme.textMuted, size: 20),
+                icon: Icon(Icons.more_vert, color: AppTheme.textMuted, size: 20),
                 color: AppTheme.surface,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
                 onSelected: (v) => onMenuAction?.call(v),
                 itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'rename',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, color: AppTheme.textSecondary, size: 18),
-                        const SizedBox(width: 10),
-                        Text('تغییر نام',
-                            style: TextStyle(color: AppTheme.textPrimary)),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'share',
-                    child: Row(
-                      children: [
-                        Icon(Icons.share, color: AppTheme.textSecondary, size: 18),
-                        const SizedBox(width: 10),
-                        Text('ارسال',
-                            style: TextStyle(color: AppTheme.textPrimary)),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.delete, color: Colors.redAccent, size: 18),
-                        const SizedBox(width: 10),
-                        Text('حذف',
-                            style: TextStyle(color: AppTheme.textPrimary)),
-                      ],
-                    ),
-                  ),
+                  PopupMenuItem(value: 'rename', child: Row(children: [
+                    Icon(Icons.edit, color: AppTheme.textSecondary, size: 18),
+                    const SizedBox(width: 10),
+                    Text('تغییر نام', style: TextStyle(color: AppTheme.textPrimary)),
+                  ])),
+                  PopupMenuItem(value: 'share', child: Row(children: [
+                    Icon(Icons.share, color: AppTheme.textSecondary, size: 18),
+                    const SizedBox(width: 10),
+                    Text('ارسال', style: TextStyle(color: AppTheme.textPrimary)),
+                  ])),
+                  PopupMenuItem(value: 'delete', child: Row(children: [
+                    const Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                    const SizedBox(width: 10),
+                    Text('حذف', style: TextStyle(color: AppTheme.textPrimary)),
+                  ])),
                 ],
               ),
             ],
