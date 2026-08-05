@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:on_audio_query/on_audio_query.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../models/track.dart';
@@ -174,29 +175,35 @@ class _PlayerScreenState extends State<PlayerScreen>
     });
   }
 
-  bool _onKey(FocusNode node, KeyEvent e) {
-    if (e is! KeyDownEvent) return false;
+  KeyEventResult _onKey(FocusNode node, KeyEvent e) {
+    if (e is! KeyDownEvent) return KeyEventResult.ignored;
     final k = e.logicalKey;
     final ps = widget.playerService;
     if (k == LogicalKeyboardKey.space) {
       ps.playing ? ps.pause() : ps.play();
-      return true;
+      return KeyEventResult.handled;
     }
     if (HardwareKeyboard.instance.isControlPressed) {
-      if (k == LogicalKeyboardKey.arrowRight) { ps.skipToNext(); return true; }
-      if (k == LogicalKeyboardKey.arrowLeft) { ps.skipToPrevious(); return true; }
+      if (k == LogicalKeyboardKey.arrowRight) {
+        ps.skipToNext();
+        return KeyEventResult.handled;
+      }
+      if (k == LogicalKeyboardKey.arrowLeft) {
+        ps.skipToPrevious();
+        return KeyEventResult.handled;
+      }
     }
     if (k == LogicalKeyboardKey.arrowUp) {
       ps.setVolume(ps.volume + 0.05);
       setState(() {});
-      return true;
+      return KeyEventResult.handled;
     }
     if (k == LogicalKeyboardKey.arrowDown) {
       ps.setVolume(ps.volume - 0.05);
       setState(() {});
-      return true;
+      return KeyEventResult.handled;
     }
-    return false;
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -213,15 +220,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (_meta?.coverDataUrl != null) {
       final parts = _meta!.coverDataUrl!.split(',');
       inner = Image.memory(base64Decode(parts.last), fit: BoxFit.cover);
-    } else if (t.artworkId != null && !kIsWeb) {
-      inner = ArtworkWidget(
-        key: Key('big_${t.artworkId}'),
-        type: ArtworkType.AUDIO,
-        id: t.artworkId!,
-        size: size.toInt(),
-        errorWidget: Icon(Icons.music_note_rounded,
-            size: size / 4, color: AppTheme.textMuted),
-      );
     } else if (t.artworkUrl != null) {
       inner = Image.network(t.artworkUrl!, fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => Icon(Icons.music_note_rounded,
@@ -233,6 +231,15 @@ class _PlayerScreenState extends State<PlayerScreen>
     return ClipOval(child: SizedBox(width: size, height: size, child: inner));
   }
 
+  Widget _tileArt(Track t) {
+    if (t.artworkUrl != null) {
+      return Image.network(t.artworkUrl!, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              Icon(Icons.music_note, color: AppTheme.textMuted));
+    }
+    return Icon(Icons.music_note, color: AppTheme.textMuted);
+  }
+
   Widget _visualizer() {
     return AnimatedBuilder(
       animation: _vis,
@@ -241,10 +248,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           mainAxisSize: MainAxisSize.min,
           children: List.generate(5, (i) {
             final h = 6 +
-                14 *
-                    (0.5 +
-                        0.5 *
-                            sin((_vis.value * 2 * pi) + i * 1.3));
+                14 * (0.5 + 0.5 * sin((_vis.value * 2 * pi) + i * 1.3));
             return Container(
               width: 3,
               height: h,
@@ -294,7 +298,11 @@ class _PlayerScreenState extends State<PlayerScreen>
         final lines = _lyrics!.synced;
         int idx = -1;
         for (var i = 0; i < lines.length; i++) {
-          if (lines[i].time <= pos) idx = i; else break;
+          if (lines[i].time <= pos) {
+            idx = i;
+          } else {
+            break;
+          }
         }
         if (idx != _lyricIndex) {
           _lyricIndex = idx;
@@ -789,10 +797,14 @@ class _PlayerScreenState extends State<PlayerScreen>
           color: AppTheme.surface,
           onSelected: _startSleep,
           itemBuilder: (_) => [
-            const PopupMenuItem(value: 0, child: Text('خاموش', style: TextStyle(color: AppTheme.textPrimary))),
+            PopupMenuItem(
+                value: 0,
+                child: Text('خاموش',
+                    style: TextStyle(color: AppTheme.textPrimary))),
             ...[5, 15, 30, 60].map((m) => PopupMenuItem(
                 value: m,
-                child: Text('$m دقیقه', style: TextStyle(color: AppTheme.textPrimary)))),
+                child: Text('$m دقیقه',
+                    style: TextStyle(color: AppTheme.textPrimary)))),
           ],
           child: Icon(Icons.bedtime_outlined,
               color: _sleepSec > 0 ? AppTheme.accent : AppTheme.textSecondary,
