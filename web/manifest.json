@@ -1,0 +1,11 @@
+{
+  "name": "SonicWave",
+  "short_name": "SonicWave",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
+  "description": "SonicWave music player",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
