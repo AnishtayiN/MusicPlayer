@@ -54,16 +54,20 @@ class _SonicWaveAppState extends State<SonicWaveApp> {
   @override
   void initState() {
     super.initState();
-    _isDark = widget.storageService.isDarkTheme();
-    AppTheme.isDark = _isDark;
+    _loadTheme();
   }
 
-  void _setTheme(bool dark) {
+  void _loadTheme() {
+    _isDark = widget.storageService.isDarkTheme();
+    AppTheme.isDark = _isDark;
+    AppTheme.darkAccentId = widget.storageService.getDarkAccent();
+    AppTheme.lightAccentId = widget.storageService.getLightAccent();
+  }
+
+  void _onThemeUpdated() {
     setState(() {
-      _isDark = dark;
-      AppTheme.isDark = dark;
+      _loadTheme();
     });
-    widget.storageService.setDarkTheme(dark);
   }
 
   @override
@@ -78,7 +82,7 @@ class _SonicWaveAppState extends State<SonicWaveApp> {
         playerService: widget.playerService,
         storageService: widget.storageService,
         isDark: _isDark,
-        onThemeChanged: _setTheme,
+        onThemeUpdated: _onThemeUpdated,
       ),
     );
   }
@@ -88,14 +92,14 @@ class MainScreen extends StatefulWidget {
   final PlayerService playerService;
   final StorageService storageService;
   final bool isDark;
-  final ValueChanged<bool> onThemeChanged;
+  final VoidCallback onThemeUpdated;
 
   const MainScreen({
     super.key,
     required this.playerService,
     required this.storageService,
     required this.isDark,
-    required this.onThemeChanged,
+    required this.onThemeUpdated,
   });
 
   @override
@@ -158,8 +162,8 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => SettingsScreen(
-          isDark: widget.isDark,
-          onThemeChanged: widget.onThemeChanged,
+          storageService: widget.storageService,
+          onThemeUpdated: widget.onThemeUpdated,
           onCheckUpdate: () => _checkForUpdate(manual: true),
         ),
       ),
