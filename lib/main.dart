@@ -1,6 +1,5 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import 'models/track.dart';
 import 'services/player_service.dart';
@@ -83,7 +82,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final UpdateService _updateService = UpdateService();
   int _currentScreen = 0;
-  List<Track> _currentQueue = [];
 
   @override
   void initState() {
@@ -93,10 +91,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _checkForUpdate() async {
     final update = await _updateService.checkForUpdate();
-
-    if (update == null) return;
-    if (!mounted) return;
-
+    if (update == null || !mounted) return;
     if (widget.storageService.getSkipUpdate(update.version)) return;
 
     showDialog(
@@ -109,25 +104,18 @@ class _MainScreenState extends State<MainScreen> {
           await widget.storageService.setSkipUpdate(update.version, true);
           if (mounted) Navigator.of(context).pop();
         },
-        onLater: () {
-          Navigator.of(context).pop();
-        },
+        onLater: () => Navigator.of(context).pop(),
       ),
     );
   }
 
   void _playTrack(Track track, List<Track> queue) async {
-    _currentQueue = queue;
     await widget.playerService.loadTracks(queue);
-
     final index = queue.indexWhere((t) => t.id == track.id);
     if (index >= 0) {
       await widget.playerService.skipToQueueItem(index);
     }
-
-    setState(() {
-      _currentScreen = 0;
-    });
+    setState(() => _currentScreen = 0);
   }
 
   @override
@@ -179,9 +167,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _openSettings(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const SettingsScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
     );
   }
 }
