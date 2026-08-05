@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'models/track.dart';
@@ -16,11 +19,11 @@ import 'widgets/update_dialog.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final storageService = StorageService();
-  await storageService.init();
+  final storage = StorageService();
+  await storage.init();
 
-  final playerService = await AudioService.init(
-    builder: () => PlayerService(),
+  final player = await AudioService.init(
+    builder: () => PlayerService(storage),
     config: const AudioServiceConfig(
       androidNotificationChannelId: 'com.example.sonic_wave.audio',
       androidNotificationChannelName: 'SonicWave',
@@ -29,10 +32,36 @@ Future<void> main() async {
     ),
   );
 
-  runApp(SonicWaveApp(
-    playerService: playerService,
-    storageService: storageService,
-  ));
+  // Drag & Drop فایل در ویندوز
+  onFilesDropped((paths) {
+    final exts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'];
+    final dropped = paths
+        .where((p) => exts.any((e) => p.toLowerCase().endsWith(e)))
+        .map((p) {
+      final name = p.replaceAll('\\', '/').split('/').last;
+      final dot = name.lastIndexOf('.');
+      return Track(
+        id: 'drop_${p.hashCode}',
+        title: dot > 0 ? name.substring(0, dot) : name,
+        artist: 'Local File',
+        url: kIsWeb ? localFileUrl(p) : p,
+        isLocal: true,
+        localPath: p,
+      );
+    }).toList();
+    if (dropped.isNotEmpty) player.addTracks(dropped);
+  });
+
+  // Media Keys ویندوز
+  onMediaKey((key) {
+    if (key == 'playpause') {
+      player.playing ? player.pause() : player.play();
+    }
+    if (key == 'next') player.skipToNext();
+    if (key == 'prev') player.skipToPrevious();
+  });
+
+  runApp(SonicWaveApp(playerService: player, storageService: storage));
 }
 
 class SonicWaveApp extends StatefulWidget {
@@ -63,18 +92,8 @@ class _SonicWaveAppState extends State<SonicWaveApp> {
     AppTheme.isDark = _isDark;
     AppTheme.darkAccentId = widget.storageService.getDarkAccent();
     AppTheme.lightAccentId = widget.storageService.getLightAccent();
-
-    // هماهنگ‌سازی رنگ نوار عنوان ویندوز با تم
     setTitleBarColor(
-      AppTheme.toHex(AppTheme.background),
-      AppTheme.toHex(AppTheme.textPrimary),
-    );
-  }
-
-  void _onThemeUpdated() {
-    setState(() {
-      _loadTheme();
-    });
+        AppTheme.toHex(AppTheme.background), AppTheme.toHex(AppTheme.textPrimary));
   }
 
   @override
@@ -89,7 +108,7 @@ class _SonicWaveAppState extends State<SonicWaveApp> {
         playerService: widget.playerService,
         storageService: widget.storageService,
         isDark: _isDark,
-        onThemeUpdated: _onThemeUpdated,
+        onThemeUpdated: () => setState(() => _loadTheme()),
       ),
     );
   }
@@ -121,8 +140,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    // بررسی آپدیت خودکار با کمی تاخیر (بعد از آماده شدن UI)
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) _checkForUpdate();
     });
@@ -134,32 +151,23 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // بررسی آپدیت وقتی کاربر به برنامه برمی‌گردد
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkForUpdate();
-    }
+    if (state == AppLifecycleState.resumed) _checkForUpdate();
   }
 
   Future<void> _checkForUpdate({bool manual = false}) async {
     final update = await _updateService.checkForUpdate();
     if (!mounted) return;
-
     if (update == null) {
       if (manual) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: const Text('نسخه شما به‌روز است یا امکان بررسی وجود ندارد'),
-            backgroundColor: AppTheme.surface,
-          ),
-        );
+            backgroundColor: AppTheme.surface));
       }
       return;
     }
-
     if (!manual && widget.storageService.getSkipUpdate(update.version)) return;
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -177,23 +185,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   void _playTrack(Track track, List<Track> queue) async {
     await widget.playerService.loadTracks(queue);
-    final index = queue.indexWhere((t) => t.id == track.id);
-    if (index >= 0) {
-      await widget.playerService.skipToQueueItem(index);
-    }
+    final i = queue.indexWhere((t) => t.id == track.id);
+    if (i >= 0) await widget.playerService.skipToQueueItem(i);
     setState(() => _currentScreen = 0);
   }
 
   void _openSettings(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => SettingsScreen(
-          storageService: widget.storageService,
-          onThemeUpdated: widget.onThemeUpdated,
-          onCheckUpdate: () => _checkForUpdate(manual: true),
-        ),
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SettingsScreen(
+        storageService: widget.storageService,
+        onThemeUpdated: widget.onThemeUpdated,
+        onCheckUpdate: () => _checkForUpdate(manual: true),
       ),
-    );
+    ));
   }
 
   @override
@@ -202,7 +206,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       stream: widget.playerService.mediaItem,
       builder: (context, snapshot) {
         final hasTrack = snapshot.data != null;
-
         return Scaffold(
           backgroundColor: AppTheme.background,
           body: IndexedStack(
@@ -216,6 +219,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               ),
               LibraryScreen(
                 storageService: widget.storageService,
+                playerService: widget.playerService,
                 currentTrackId: widget.playerService.currentTrack?.id,
                 onPlayTrack: _playTrack,
                 onOpenSettings: () => _openSettings(context),
@@ -225,8 +229,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           bottomNavigationBar: hasTrack && _currentScreen != 0
               ? StreamBuilder<PlaybackState>(
                   stream: widget.playerService.playbackState,
-                  builder: (context, stateSnapshot) {
-                    final playing = stateSnapshot.data?.playing ?? false;
+                  builder: (context, st) {
+                    final playing = st.data?.playing ?? false;
                     return MiniPlayer(
                       currentTrack: widget.playerService.currentTrack,
                       isPlaying: playing,
@@ -237,8 +241,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       onNext: widget.playerService.skipToNext,
                       onClose: () => widget.playerService.stopAndClear(),
                     );
-                  },
-                )
+                  })
               : null,
         );
       },
