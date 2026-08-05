@@ -118,6 +118,12 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _currentScreen = 0);
   }
 
+  void _openSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<MediaItem?>(
@@ -140,6 +146,7 @@ class _MainScreenState extends State<MainScreen> {
                 storageService: widget.storageService,
                 currentTrackId: widget.playerService.currentTrack?.id,
                 onPlayTrack: _playTrack,
+                onOpenSettings: () => _openSettings(context),
               ),
             ],
           ),
@@ -156,18 +163,13 @@ class _MainScreenState extends State<MainScreen> {
                           ? widget.playerService.pause
                           : widget.playerService.play,
                       onNext: widget.playerService.skipToNext,
+                      onClose: () => widget.playerService.stopAndClear(),
                     );
                   },
                 )
               : null,
         );
       },
-    );
-  }
-
-  void _openSettings(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
     );
   }
 }
