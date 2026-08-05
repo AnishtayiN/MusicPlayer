@@ -12,6 +12,28 @@ allprojects {
                 }
                 compileSdkVersion 35
             }
+            
+            // Patch manifests برای حذف package attribute از پلاگین‌های قدیمی (AGP 8+)
+            tasks.configureEach { task ->
+                if (task.name.startsWith('process') && task.name.endsWith('Manifest')) {
+                    task.doFirst {
+                        def manifests = project.fileTree(
+                            dir: "${project.projectDir}/src",
+                            include: "**/AndroidManifest.xml"
+                        )
+                        manifests.each { File manifestFile ->
+                            if (manifestFile.exists()) {
+                                def content = manifestFile.text
+                                if (content.contains('package="')) {
+                                    content = content.replaceAll(/package="[^"]*"/, '')
+                                    manifestFile.text = content
+                                    logger.lifecycle("Patched package attribute from ${manifestFile.path}")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
