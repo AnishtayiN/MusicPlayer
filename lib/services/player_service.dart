@@ -74,7 +74,6 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
         duration: Duration(milliseconds: t.durationMs ?? 0),
       );
 
-  // ---------- بارگذاری ----------
 
   Future<void> loadTracks(List<Track> tracks,
       {int startIndex = 0, bool autoplay = true}) async {
@@ -121,7 +120,6 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     } catch (_) {}
   }
 
-  // ---------- حالت‌های پخش ----------
 
   int _nextIndex({bool auto = false}) {
     final n = _tracks.length;
@@ -172,7 +170,6 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     _loadIndex(idx);
   }
 
-  // ---------- کنترل‌ها ----------
 
   @override
   Future<void> play() => _player.play();
@@ -230,7 +227,6 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     }
   }
 
-  // ---------- ولوم و سرعت ----------
 
   double get volume => _volume;
 
@@ -267,7 +263,6 @@ class PlayerService extends BaseAudioHandler with QueueHandler, SeekHandler {
     queue.add(const []);
   }
 
-  // ---------- getterها ----------
 
   List<Track> get tracks => _tracks;
   int get currentIndex => _currentIndex;
