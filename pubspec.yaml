@@ -25,6 +25,7 @@ dependencies:
   dio: ^5.5.0+1
   palette_generator: ^0.3.3+4
   cached_network_image: ^3.4.1
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:
