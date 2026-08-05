@@ -1,51 +1,38 @@
-# Dependencies
-.pub/
-.dart_tool/
+```
+# Android build outputs
+android/build/
+android/app/build/
+android/.gradle/
+*.apk
+*.aar
+*.dex
 
-# Build outputs
-build/
-dist/
-
-# Logs
+# Android studio files
+.idea/
+*.iml
+*.iws
 *.log
 
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Temporary files
-*.tmp
-*.temp
-
-# Compiled files
-*.pyc
-*.class
-*.o
-*.exe
-*.dll
-*.so
-*.a
-*.obj
-*.out
-
-# Caches
-.mypy_cache/
-.pytest_cache/
+# Gradle
 .gradle/
-__pycache__/
+!gradle/wrapper/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Keystore properties file
+key.properties
+
+# Log Files
+*.log
+
+# Android cache
+.cache/
+
+# Code coverage reports
+coverage/
+*.ec
+
+# Unit test reports
+test-results/
+```
