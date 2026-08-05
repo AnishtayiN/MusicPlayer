@@ -27,7 +27,6 @@ class PlayerScreen extends StatefulWidget {
 class _PlayerScreenState extends State<PlayerScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _discController;
-  PaletteGenerator? _palette;
   Color _dominantColor = const Color(0xFF8B5CF6);
 
   @override
@@ -61,7 +60,6 @@ class _PlayerScreenState extends State<PlayerScreen>
 
       if (mounted) {
         setState(() {
-          _palette = generator;
           _dominantColor = generator.dominantColor?.color ?? const Color(0xFF8B5CF6);
         });
       }
