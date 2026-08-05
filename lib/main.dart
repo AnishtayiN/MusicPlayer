@@ -32,7 +32,6 @@ Future<void> main() async {
     ),
   );
 
-  // Drag & Drop فایل در ویندوز
   onFilesDropped((paths) {
     final exts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'];
     final dropped = paths
@@ -52,7 +51,6 @@ Future<void> main() async {
     if (dropped.isNotEmpty) player.addTracks(dropped);
   });
 
-  // Media Keys ویندوز
   onMediaKey((key) {
     if (key == 'playpause') {
       player.playing ? player.pause() : player.play();
