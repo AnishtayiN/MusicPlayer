@@ -13,12 +13,14 @@ class LibraryScreen extends StatefulWidget {
   final PlayerCallback onPlayTrack;
   final StorageService storageService;
   final String? currentTrackId;
+  final VoidCallback onOpenSettings;
 
   const LibraryScreen({
     super.key,
     required this.onPlayTrack,
     required this.storageService,
     this.currentTrackId,
+    required this.onOpenSettings,
   });
 
   @override
@@ -98,6 +100,15 @@ class _LibraryScreenState extends State<LibraryScreen>
 
   Future<void> _clearCustomFolder() async {
     await widget.storageService.setCustomFolderPath(null);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('پوشه انتخابی حذف شد، اسکن خودکار فعال است'),
+          backgroundColor: Color(0xFF111827),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
     _loadTracks();
   }
 
@@ -109,7 +120,8 @@ class _LibraryScreenState extends State<LibraryScreen>
       final dir = Directory(path);
       if (!await dir.exists()) return tracks;
 
-      final entities = await dir.list(recursive: true, followLinks: false).toList();
+      final entities =
+          await dir.list(recursive: true, followLinks: false).toList();
 
       int index = 0;
       for (final entity in entities) {
@@ -121,7 +133,7 @@ class _LibraryScreenState extends State<LibraryScreen>
             final title = fileName.split('.').first;
 
             tracks.add(Track(
-              id: 'folder_$index',
+              id: 'folder_${entity.path.hashCode}',
               title: title,
               artist: 'Local File',
               url: entity.path,
@@ -133,7 +145,8 @@ class _LibraryScreenState extends State<LibraryScreen>
         }
       }
 
-      tracks.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      tracks.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     } catch (e) {
       // Scan failed
     }
@@ -186,11 +199,9 @@ class _LibraryScreenState extends State<LibraryScreen>
       List<Track> localTracks = [];
       final customPath = widget.storageService.getCustomFolderPath();
 
-      // اسکن پوشه سفارشی (اگر انتخاب شده)
       if (customPath != null && customPath.isNotEmpty) {
         localTracks = await _scanFolder(customPath);
       } else {
-        // اسکن خودکار از Media Store
         try {
           final status = await Permission.audio.status;
           PermissionStatus finalStatus = status;
@@ -212,7 +223,8 @@ class _LibraryScreenState extends State<LibraryScreen>
             );
 
             localTracks = songs
-                .where((s) => (s.isMusic ?? false) && s.duration != null && s.duration! > 0)
+                .where((s) =>
+                    (s.isMusic ?? false) && s.duration != null && s.duration! > 0)
                 .map((s) => Track(
                       id: 'local_${s.id}',
                       title: s.title,
@@ -231,7 +243,7 @@ class _LibraryScreenState extends State<LibraryScreen>
 
       setState(() {
         _allTracks = [...demoTracks, ...localTracks];
-        _filteredTracks = _allTracks;
+        _applyFilter();
         _loading = false;
       });
     } catch (e) {
@@ -256,15 +268,13 @@ class _LibraryScreenState extends State<LibraryScreen>
     }
 
     if (query.isEmpty) {
-      setState(() => _filteredTracks = base);
+      _filteredTracks = base;
     } else {
-      setState(() {
-        _filteredTracks = base
-            .where((t) =>
-                t.title.toLowerCase().contains(query) ||
-                t.artist.toLowerCase().contains(query))
-            .toList();
-      });
+      _filteredTracks = base
+          .where((t) =>
+              t.title.toLowerCase().contains(query) ||
+              t.artist.toLowerCase().contains(query))
+          .toList();
     }
   }
 
@@ -286,12 +296,22 @@ class _LibraryScreenState extends State<LibraryScreen>
             icon: const Icon(Icons.folder_open, color: Colors.white70),
             tooltip: 'انتخاب پوشه موزیک',
           ),
+          IconButton(
+            onPressed: _loadTracks,
+            icon: const Icon(Icons.refresh, color: Colors.white70),
+            tooltip: 'اسکن مجدد',
+          ),
           if (widget.storageService.getCustomFolderPath() != null)
             IconButton(
               onPressed: _clearCustomFolder,
-              icon: const Icon(Icons.close, color: Colors.white70),
+              icon: const Icon(Icons.folder_delete_outlined, color: Colors.white70),
               tooltip: 'حذف پوشه انتخابی',
             ),
+          IconButton(
+            onPressed: widget.onOpenSettings,
+            icon: const Icon(Icons.settings, color: Colors.white70),
+            tooltip: 'تنظیمات',
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -335,10 +355,10 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: TextField(
               controller: _searchController,
-              onChanged: (_) => _applyFilter(),
+              onChanged: (_) => setState(() => _applyFilter()),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'جستجو...',
@@ -351,7 +371,7 @@ class _LibraryScreenState extends State<LibraryScreen>
                         icon: const Icon(Icons.clear, color: Colors.white54),
                         onPressed: () {
                           _searchController.clear();
-                          _applyFilter();
+                          setState(() => _applyFilter());
                         },
                       )
                     : null,
@@ -362,6 +382,21 @@ class _LibraryScreenState extends State<LibraryScreen>
               ),
             ),
           ),
+          if (!_loading && _error == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Text(
+                    '${_filteredTracks.length} آهنگ',
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: _loading
                 ? const Center(
