@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/track.dart';
 import '../services/storage_service.dart';
+import '../utils/web_bridge.dart';
 import '../widgets/track_tile.dart';
 
 class LibraryScreen extends StatefulWidget {
@@ -64,12 +66,37 @@ class _LibraryScreenState extends State<LibraryScreen>
     super.dispose();
   }
 
+  String _baseName(String p) {
+    final norm = p.replaceAll('\\', '/');
+    final name = norm.split('/').last;
+    final dot = name.lastIndexOf('.');
+    return dot > 0 ? name.substring(0, dot) : name;
+  }
+
   Future<void> _pickCustomFolder() async {
     try {
-      final path = await FilePicker.platform.getDirectoryPath(
-        dialogTitle: 'پوشه موزیک خود را انتخاب کنید',
-        lockParentWindow: true,
-      );
+      String? path;
+
+      if (kIsWeb) {
+        // نسخه ویندوز (Electron): دیالوگ نیتیو
+        if (!isElectronBridgeAvailable) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('انتخاب پوشه فقط در نسخه دسکتاپ فعال است'),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+          }
+          return;
+        }
+        path = await selectFolderNative();
+      } else {
+        // نسخه اندروید
+        path = await FilePicker.platform.getDirectoryPath(
+          dialogTitle: 'پوشه موزیک خود را انتخاب کنید',
+        );
+      }
 
       if (path != null && path.isNotEmpty) {
         await widget.storageService.setCustomFolderPath(path);
@@ -112,6 +139,7 @@ class _LibraryScreenState extends State<LibraryScreen>
     _loadTracks();
   }
 
+  /// اسکن پوشه در اندروید (dart:io)
   Future<List<Track>> _scanFolder(String path) async {
     final List<Track> tracks = [];
     final extensions = {'.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'};
@@ -123,18 +151,13 @@ class _LibraryScreenState extends State<LibraryScreen>
       final entities =
           await dir.list(recursive: true, followLinks: false).toList();
 
-      int index = 0;
       for (final entity in entities) {
         if (entity is File) {
           final ext = entity.path.toLowerCase();
           if (extensions.any((e) => ext.endsWith(e))) {
-            index++;
-            final fileName = entity.path.split(Platform.pathSeparator).last;
-            final title = fileName.split('.').first;
-
             tracks.add(Track(
               id: 'folder_${entity.path.hashCode}',
-              title: title,
+              title: _baseName(entity.path),
               artist: 'Local File',
               url: entity.path,
               isLocal: true,
@@ -150,6 +173,28 @@ class _LibraryScreenState extends State<LibraryScreen>
     } catch (e) {
       // Scan failed
     }
+
+    return tracks;
+  }
+
+  /// اسکن پوشه در ویندوز (از طریق Node.js / Electron)
+  Future<List<Track>> _scanFolderWeb(String path) async {
+    final files = await listAudioFilesNative(path);
+
+    final tracks = files
+        .map((p) => Track(
+              id: 'folder_${p.hashCode}',
+              title: _baseName(p),
+              artist: 'Local File',
+              url: localFileUrl(p),
+              isLocal: true,
+              localPath: null,
+              durationMs: null,
+            ))
+        .toList();
+
+    tracks.sort(
+        (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
 
     return tracks;
   }
@@ -200,8 +245,13 @@ class _LibraryScreenState extends State<LibraryScreen>
       final customPath = widget.storageService.getCustomFolderPath();
 
       if (customPath != null && customPath.isNotEmpty) {
-        localTracks = await _scanFolder(customPath);
-      } else {
+        if (kIsWeb) {
+          localTracks = await _scanFolderWeb(customPath);
+        } else {
+          localTracks = await _scanFolder(customPath);
+        }
+      } else if (!kIsWeb) {
+        // اسکن خودکار فقط در اندروید
         try {
           final status = await Permission.audio.status;
           PermissionStatus finalStatus = status;
@@ -224,7 +274,9 @@ class _LibraryScreenState extends State<LibraryScreen>
 
             localTracks = songs
                 .where((s) =>
-                    (s.isMusic ?? false) && s.duration != null && s.duration! > 0)
+                    (s.isMusic ?? false) &&
+                    s.duration != null &&
+                    s.duration! > 0)
                 .map((s) => Track(
                       id: 'local_${s.id}',
                       title: s.title,
@@ -304,7 +356,8 @@ class _LibraryScreenState extends State<LibraryScreen>
           if (widget.storageService.getCustomFolderPath() != null)
             IconButton(
               onPressed: _clearCustomFolder,
-              icon: const Icon(Icons.folder_delete_outlined, color: Colors.white70),
+              icon: const Icon(Icons.folder_delete_outlined,
+                  color: Colors.white70),
               tooltip: 'حذف پوشه انتخابی',
             ),
           IconButton(
