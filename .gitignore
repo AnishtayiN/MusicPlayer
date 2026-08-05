@@ -1,43 +1,45 @@
 ```
-# Android build outputs
-android/app/build/
-android/.gradle/
-android/build/
-
-# Android resource files (keeping the XML ones that were added)
-!android/app/src/main/res/mipmap-hdpi/ic_launcher.xml
-!android/app/src/main/res/mipmap-mdpi/ic_launcher.xml
-!android/app/src/main/res/mipmap-xhdpi/ic_launcher.xml
-!android/app/src/main/res/mipmap-xxhdpi/ic_launcher.xml
-!android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.xml
-
-# Compiled and build artifacts
-*.apk
-*.aar
-*.so
-*.dex
-gen/
-out/
-
 # Dependencies
 node_modules/
-vendor/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
+# Build artifacts
+build/
+dist/
+*.js.map
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Editors
+# Logs
+*.log
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*.tmp
 
-# OS generated files
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+.env/
+
+# Dart/Flutter
+.dart_tool/
+.packages
+.pub/
+build/
+*.g.dart
+
+# OS
 .DS_Store
 Thumbs.db
 ```

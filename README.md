@@ -2,7 +2,7 @@
 
 # 🎵 SonicWave
 
-### پلیر موسیقی مدرن برای اندروید و ویندوز
+### 🎶 پلیر موسیقی مدرن برای اندروید و ویندوز
 
 **طراحی زیبا · تم‌های رنگی · متن آهنگ · صف پخش هوشمند**
 
@@ -18,13 +18,22 @@
   <img src="https://img.shields.io/badge/🎨_8_Themes-EC4899?style=for-the-badge" />
 </p>
 
+<img src="https://img.shields.io/badge/Made_with-❤️-FF6B6B?style=for-the-badge" alt="Made with love" />
+<img src="https://img.shields.io/badge/Platform-Android_%7C_Windows-4A90E2?style=for-the-badge" alt="Platforms" />
+
 </div>
 
 ---
 
 ## ✨ SonicWave چیست؟
 
-**SonicWave** یک موزیک‌پلیر مدرن و چندسکویی است که با **Flutter** ساخته شده و روی **اندروید 7+** و **ویندوز 7+** اجرا می‌شود. با رابط کاربری تاریک/روشن، 8 تم رنگی، متن آهنگ زنده، صف پخش هوشمند و به‌روزرسانی خودکار، تجربه‌ای در حد پلیرهای حرفه‌ای ارائه می‌دهد.
+<div align="center">
+
+**SonicWave** یک موزیک‌پلیر مدرن و چندسکویی است که با **Flutter** ساخته شده و روی **اندروید 7+** و **ویندوز 7+** اجرا می‌شود.
+
+🎨 با رابط کاربری تاریک/روشن، 8 تم رنگی، متن آهنگ زنده، صف پخش هوشمند و به‌روزرسانی خودکار، تجربه‌ای در حد پلیرهای حرفه‌ای ارائه می‌دهد.
+
+</div>
 
 ---
 
@@ -75,10 +84,16 @@
 
 ## 📝 متن آهنگ (Lyrics)
 
-- 🔎 **دریافت خودکار** متن هماهنگ‌شده از سرویس LRCLIB
-- 📄 **فایل‌های محلی** `.lrc` و `.txt` کنار آهنگ
-- 🎤 **حالت کاراوکه** — هایلایت خط‌به‌خط با اسکرول خودکار
-- ✍️ **افزودن دستی** — متن خودت را paste کن، برای همیشه ذخیره می‌شود
+<div align="center">
+
+| ویژگی | توضیح |
+|---|---|
+| 🔎 **دریافت خودکار** | متن هماهنگ‌شده از سرویس LRCLIB |
+| 📄 **فایل‌های محلی** | `.lrc` و `.txt` کنار آهنگ |
+| 🎤 **حالت کاراوکه** | هایلایت خط‌به‌خط با اسکرول خودکار |
+| ✍️ **افزودن دستی** | متن خودت را paste کن، برای همیشه ذخیره می‌شود |
+
+</div>
 
 ---
 
@@ -107,7 +122,11 @@
 
 ## 🔄 به‌روزرسانی خودکار
 
+<div align="center">
+
 SonicWave به صورت خودکار نسخه جدید را از **GitHub Releases** بررسی می‌کند و با یک پیام زیبا، لینک دانلود مستقیم را نمایش می‌دهد.
+
+</div>
 
 ---
 
@@ -122,16 +141,20 @@ SonicWave به صورت خودکار نسخه جدید را از **GitHub Releas
 
 ## 🎨 گالری تم‌ها
 
-| نام | کد رنگ |
-|---|---|
-| 💜 بنفش | `#8B5CF6` |
-| 💙 آبی | `#3B82F6` |
-| 💗 صورتی | `#EC4899` |
-| ❤️ قرمز | `#EF4444` |
-| 🧡 نارنجی | `#F97316` |
-| 🟡 طلایی | `#F59E0B` |
-| 💚 سبز | `#10B981` |
-| 🩵 فیروزه‌ای | `#14B8A6` |
+<div align="center">
+
+| نام | کد رنگ | نمونه |
+|---|---|---|
+| 💜 بنفش | `#8B5CF6` | <span style="display:inline-block;width:20px;height:20px;background:#8B5CF6;border-radius:50%;"></span> |
+| 💙 آبی | `#3B82F6` | <span style="display:inline-block;width:20px;height:20px;background:#3B82F6;border-radius:50%;"></span> |
+| 💗 صورتی | `#EC4899` | <span style="display:inline-block;width:20px;height:20px;background:#EC4899;border-radius:50%;"></span> |
+| ❤️ قرمز | `#EF4444` | <span style="display:inline-block;width:20px;height:20px;background:#EF4444;border-radius:50%;"></span> |
+| 🧡 نارنجی | `#F97316` | <span style="display:inline-block;width:20px;height:20px;background:#F97316;border-radius:50%;"></span> |
+| 🟡 طلایی | `#F59E0B` | <span style="display:inline-block;width:20px;height:20px;background:#F59E0B;border-radius:50%;"></span> |
+| 💚 سبز | `#10B981` | <span style="display:inline-block;width:20px;height:20px;background:#10B981;border-radius:50%;"></span> |
+| 🩵 فیروزه‌ای | `#14B8A6` | <span style="display:inline-block;width:20px;height:20px;background:#14B8A6;border-radius:50%;"></span> |
+
+</div>
 
 ---
 
@@ -139,7 +162,7 @@ SonicWave به صورت خودکار نسخه جدید را از **GitHub Releas
 
 <div align="center">
 
-### **Anish TayiN**
+### **AnishtayiN**
 
 [![Telegram](https://img.shields.io/badge/Telegram-@AnishrayiN-0088cc?style=for-the-badge&logo=telegram)](https://t.me/AnishrayiN)
 [![GitHub](https://img.shields.io/badge/GitHub-AnishtayiN-181717?style=for-the-badge&logo=github)](https://github.com/AnishtayiN)
@@ -150,7 +173,11 @@ SonicWave به صورت خودکار نسخه جدید را از **GitHub Releas
 
 ## 📄 لایسنس
 
+<div align="center">
+
 این پروژه تحت لایسنس **MIT** منتشر شده است.
+
+</div>
 
 ---
 
@@ -159,5 +186,7 @@ SonicWave به صورت خودکار نسخه جدید را از **GitHub Releas
 ### ⭐ اگر SonicWave را دوست داری، یک ستاره بده!
 
 **ساخته‌شده با ❤️ و Flutter**
+
+![Star Count](https://img.shields.io/github/stars/AnishtayiN/MusicPlayer?style=social)
 
 </div>

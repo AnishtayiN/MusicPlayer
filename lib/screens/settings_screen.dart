@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildInfoCard(
                 icon: Icons.person,
                 title: 'سازنده',
-                subtitle: 'Anish TayiN',
+                subtitle: 'AnishtayiN',
               ),
               const SizedBox(height: 12),
               _buildActionCard(
