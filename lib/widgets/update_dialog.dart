@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../services/update_service.dart';
+import '../theme/app_theme.dart';
 
 class UpdateDialog extends StatelessWidget {
   final UpdateInfo updateInfo;
@@ -18,10 +20,8 @@ class UpdateDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF111827),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      backgroundColor: AppTheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           Container(
@@ -30,23 +30,17 @@ class UpdateDialog extends StatelessWidget {
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF8B5CF6),
-                  Color(0xFF06B6D4),
-                ],
+                colors: [AppTheme.accent, AppTheme.accent2],
               ),
             ),
-            child: const Icon(
-              Icons.system_update,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.system_update, color: Colors.white),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'نسخه جدید موجود است',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -61,16 +55,16 @@ class UpdateDialog extends StatelessWidget {
           Text(
             'نسخه ${updateInfo.version}',
             style: const TextStyle(
-              color: Color(0xFF8B5CF6),
+              color: AppTheme.accent,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'تغییرات:',
             style: TextStyle(
-              color: Colors.white70,
+              color: AppTheme.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -80,7 +74,7 @@ class UpdateDialog extends StatelessWidget {
             child: SingleChildScrollView(
               child: Text(
                 updateInfo.releaseNotes,
-                style: const TextStyle(color: Colors.white54),
+                style: TextStyle(color: AppTheme.textMuted),
               ),
             ),
           ),
@@ -89,17 +83,13 @@ class UpdateDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: onSkip,
-          child: const Text(
-            'رد کردن این نسخه',
-            style: TextStyle(color: Colors.white54),
-          ),
+          child: Text('رد کردن این نسخه',
+              style: TextStyle(color: AppTheme.textMuted)),
         ),
         TextButton(
           onPressed: onLater,
-          child: const Text(
-            'بعداً',
-            style: TextStyle(color: Colors.white70),
-          ),
+          child: Text('بعداً',
+              style: TextStyle(color: AppTheme.textSecondary)),
         ),
         ElevatedButton(
           onPressed: () {
@@ -107,7 +97,7 @@ class UpdateDialog extends StatelessWidget {
             Navigator.of(context).pop();
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF8B5CF6),
+            backgroundColor: AppTheme.accent,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
