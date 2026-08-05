@@ -28,7 +28,7 @@ Future<void> main() async {
     player = await AudioService.init(
       builder: () => PlayerService(storage),
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.example.sonic_wave.audio',
+        androidNotificationChannelId: 'com.AnishtayiN.SonicWave.audio',
         androidNotificationChannelName: 'SonicWave',
         androidNotificationOngoing: true,
         androidStopForegroundOnPause: true,

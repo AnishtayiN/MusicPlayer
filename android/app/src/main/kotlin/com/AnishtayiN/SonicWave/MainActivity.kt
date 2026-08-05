@@ -1,4 +1,4 @@
-package com.example.sonic_wave
+package com.AnishtayiN.SonicWave
 
 import io.flutter.embedding.android.FlutterActivity
 
