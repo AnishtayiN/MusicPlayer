@@ -2,8 +2,8 @@
   "name": "sonic_wave",
   "productName": "SonicWave",
   "version": "1.0.0",
-  "description": "SonicWave music player by Anish TayiN",
-  "author": "Anish TayiN",
+  "description": "SonicWave music player by AnishtayiN",
+  "author": "AnishtayiN",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
